@@ -11,7 +11,7 @@ void setConsoleColor(int color) {
 
 void resetConsoleColor() {
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleTextAttribute(hConsole, 15);				
+	SetConsoleTextAttribute(hConsole, 15);
 }
 
 
