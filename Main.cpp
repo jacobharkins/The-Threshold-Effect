@@ -7,6 +7,7 @@ int main() {
 	Graph graphs[3];
 	for (Graph g : graphs) {
 		g.gen_rand_graph(rand() % 100, float(rand()) / RAND_MAX);
+		g.gen_rand_colors();
 		g.print();
 	}
 }
