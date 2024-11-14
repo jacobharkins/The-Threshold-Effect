@@ -138,7 +138,6 @@ void Graph::print_to_file(const string& filename) const {
 }
 
 
-
 void Graph::gen_rand_graph(int n, float p) {
 	adj = vector<vector<bool>>(n, vector<bool>(n, false));
 
@@ -169,6 +168,7 @@ bool Graph::has_edge() const {
 	return bool(size(E));
 }
 
+
 bool Graph::has_triangle() const {
 	int n = V.size();
 	for (int i = 0; i < n; i++) {										// Search for Triangles
@@ -184,6 +184,7 @@ bool Graph::has_triangle() const {
 	}
 	return false;
 }
+
 
 bool Graph::has_k4() const {
 	int n = V.size();
