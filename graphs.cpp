@@ -11,7 +11,7 @@ void setConsoleColor(int color) {
 
 void resetConsoleColor() {
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleTextAttribute(hConsole, 15); // Default color (white)
+	SetConsoleTextAttribute(hConsole, 15);				
 }
 
 
@@ -30,23 +30,30 @@ void Vertex::print() const {
 
 
 void Graph::print() const {
+	bool first = true;
 	cout << "V(G): {";
 	for (const Vertex& v : V) {
+		if (!first) {
+			cout << ", ";
+		}
 		v.print();
-		cout << ", ";
+		first = false;
 	}
 	cout << "}" << endl;
 	cout << "--------------------------------------------------------------------------------------------------------------" << endl;
-
+	first = true;
 	cout << "E(G): {";
 	for (const Edge& e : E) {
+		if (!first) {
+			cout << ", ";
+		}
 		e.print();
-		cout << ",";
+		first = false;
 	}
 	cout << "}" << endl;
 	cout << "--------------------------------------------------------------------------------------------------------------" << endl;
-	cout << "Has an edge? " << has_edge() << endl;
-	cout << "Has a triangle subgraph? " << has_triangle() << endl;
+	cout << "Has an edge? " << boolalpha << has_edge() << noboolalpha << endl;
+	cout << "Has a triangle subgraph? " << boolalpha << has_triangle() << noboolalpha << endl;
 	cout << endl << "##########################################################################" << endl;
 }
 
