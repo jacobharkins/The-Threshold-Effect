@@ -2,7 +2,7 @@
 #include <Windows.h>
 #include <ctime>
 #include <fstream>
-using namespace std;
+
 
 
 void setConsoleColor(int color) {
@@ -17,7 +17,7 @@ void resetConsoleColor() {
 }
 
 
-string Graph::get_color_hex(int color) const {
+std::string Graph::get_color_hex(int color) const {
 	switch (color) {
 		case 0: return "#000000";  // Black
 		case 1: return "#0000AA";  // Blue
@@ -42,22 +42,48 @@ string Graph::get_color_hex(int color) const {
 
 void Edge::print() const {
 	setConsoleColor(color);
-	cout << "(" << v1 << "," << v2 << ")";
+	std::cout << "(" << v1 << "," << v2 << ")";
 	resetConsoleColor();
 }
 
 
 void Vertex::print() const {
 	setConsoleColor(color);
-	cout << id;
+	std::cout << id;
 	resetConsoleColor();
+}
+
+
+void Graph::print() const {
+	bool first = true;
+	std::cout << "V(G): {";
+	for (const Vertex& v : V) {
+		if (!first) {
+			std::cout << ", ";
+		}
+		v.print();
+		first = false;
+	}
+	std::cout << "} \n";
+	std::cout << "-------------------------------------------------------------------------------------------------------------- \n";
+	first = true;
+	std::cout << "E(G): {";
+	for (const Edge& e : E) {
+		if (!first) {
+			std::cout << ", ";
+		}
+		e.print();
+		first = false;
+	}
+	std::cout << "}\n";
+	std::cout << "--------------------------------------------------------------------------------------------------------------" << std::endl;
 }
 
 
 void Graph::add_vertex(int id, int color = 15) {
 	for (const auto& vertex : V) {
 		if (vertex.id == id) {
-			cout << "Vertex " << id << " already exists in the graph." << endl;
+			std::cout << "Vertex " << id << " already exists in the graph." << std::endl;
 			return;
 		}
 	}
@@ -66,14 +92,14 @@ void Graph::add_vertex(int id, int color = 15) {
 	for (auto& row : adj) {
 		row.resize(newSize, false); // Extend existing rows
 	}
-	adj.resize(newSize, vector<bool>(newSize, false)); // Add new rows
+	adj.resize(newSize, std::vector<bool>(newSize, false)); // Add new rows
 }
 
 
 void Graph::add_edge(int u, int v, int color) {
 	int maxVertex = max(u, v);
 	if (maxVertex >= adj.size()) {
-		adj.resize(maxVertex + 1, vector<bool>(maxVertex + 1, false));
+		adj.resize(maxVertex + 1, std::vector<bool>(maxVertex + 1, false));
 	}
 	adj[u][v] = true;
 	adj[v][u] = true;
@@ -81,50 +107,24 @@ void Graph::add_edge(int u, int v, int color) {
 }
 
 
-void Graph::print() const {
-	bool first = true;
-	cout << "V(G): {";
-	for (const Vertex& v : V) {
-		if (!first) {
-			cout << ", ";
-		}
-		v.print();
-		first = false;
-	}
-	cout << "}" << endl;
-	cout << "--------------------------------------------------------------------------------------------------------------" << endl;
-	first = true;
-	cout << "E(G): {";
-	for (const Edge& e : E) {
-		if (!first) {
-			cout << ", ";
-		}
-		e.print();
-		first = false;
-	}
-	cout << "}" << endl;
-	cout << "--------------------------------------------------------------------------------------------------------------" << endl;
-}
-
-
-void Vertex::print_to_file(ofstream& outputFile, string color) const {
+void Vertex::print_to_file(std::ofstream& outputFile, std::string color) const {
 	outputFile << "<span style='color:" << color << "'>" << id << "</span>";
 }
 
 
-void Edge::print_to_file(ofstream& outputFile, string color) const {
+void Edge::print_to_file(std::ofstream& outputFile, std::string color) const {
 	outputFile << "<span style='color:" << color << "'>(" << v1 << "," << v2 << ")</span>";
 }
 
 
-void Graph::print_to_file(const string& filename) const {
-	ofstream outputFile(filename);
+void Graph::print_to_file(const std::string& filename) const {
+	std::ofstream outputFile(filename);
 	if (!outputFile.is_open()) {
-		cerr << "Error opening file!" << endl;
+		std::cerr << "Error opening file!" << std::endl;
 		return;
 	}
 
-	outputFile << "<html><body>" << endl;
+	outputFile << "<html><body> \n";
 
 	// Print vertices
 	outputFile << "<h3>Vertices:</h3>{";
@@ -136,7 +136,7 @@ void Graph::print_to_file(const string& filename) const {
 		v.print_to_file(outputFile, get_color_hex(v.color));
 		firstVertex = false;
 	}
-	outputFile << "}<br>" << endl;
+	outputFile << "}<br>\n";
 
 	// Print edges
 	outputFile << "<h3>Edges:</h3>{";
@@ -148,23 +148,21 @@ void Graph::print_to_file(const string& filename) const {
 		e.print_to_file(outputFile, get_color_hex(e.color));
 		firstEdge = false;
 	}
-	outputFile << "}" << endl;
+	outputFile << "}\n";
 
-	outputFile << "</body></html>" << endl;
+	outputFile << "</body></html>" << std::endl;
 	outputFile.close();
 }
 
 
 void Graph::gen_rand_graph(int n, float p) {
-	adj = vector<vector<bool>>(n, vector<bool>(n, false));
+	adj = std::vector<std::vector<bool>>(n, std::vector<bool>(n, false));
 
 	for (int i = 0; i < n; i++) {
 		add_vertex(i);
 		for (int j = i + 1; j < n; j++) {
 			if (float(rand()) / RAND_MAX < p) {
 				add_edge(i, j);
-				adj[i][j] = true;
-				adj[j][i] = true;
 			}
 		}
 	}
@@ -186,9 +184,20 @@ bool Graph::has_edge() const {
 }
 
 
-bool Graph::has_triangle() const {
+void Graph::get_degrees() {
+	for (int i = 0; i < adj.size(); i++) {
+		for (int j = 0; j < adj.size(); j++) {
+			if (adj[i][j]) {
+				V[i].degree++;
+			}
+		}
+	}
+}
+
+
+bool Graph::has_k3() const {
 	int n = V.size();
-	for (int i = 0; i < n; i++) {										// Search for Triangles
+	for (int i = 0; i < n; i++) {										
 		for (int j = i + 1; j < n; j++) {
 			if (adj[i][j]) {
 				for (int k = j + 1; k < n; k++) {
@@ -208,7 +217,7 @@ bool Graph::has_k4() const {
 	for (int i = 0; i < n - 3; ++i) {
 		for (int j = i + 1; j < n - 2; ++j) {
 			for (int k = j + 1; k < n - 1; ++k) {
-				for (int l = k + 1; l < n; ++l) {							// Search for K4									
+				for (int l = k + 1; l < n; ++l) {																
 					if (adj[i][j] && adj[i][k] && adj[i][l] &&
 						adj[j][k] && adj[j][l] && adj[k][l]) {
 						return true;  
