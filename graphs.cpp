@@ -55,11 +55,28 @@ void Vertex::print() const {
 
 
 void Graph::add_vertex(int id, int color = 15) {
+	for (const auto& vertex : V) {
+		if (vertex.id == id) {
+			cout << "Vertex " << id << " already exists in the graph." << endl;
+			return;
+		}
+	}
 	V.emplace_back(id, color);
+	size_t newSize = max(id + 1, adj.size());
+	for (auto& row : adj) {
+		row.resize(newSize, false); // Extend existing rows
+	}
+	adj.resize(newSize, vector<bool>(newSize, false)); // Add new rows
 }
 
 
 void Graph::add_edge(int u, int v, int color) {
+	int maxVertex = max(u, v);
+	if (maxVertex >= adj.size()) {
+		adj.resize(maxVertex + 1, vector<bool>(maxVertex + 1, false));
+	}
+	adj[u][v] = true;
+	adj[v][u] = true;
 	E.emplace_back(u, v, color);
 }
 

@@ -14,6 +14,7 @@ public:
 	void print_to_file(ofstream& outputFile, string color) const;
 };
 
+
 class Vertex {
 public:
 	int id;
