@@ -2,9 +2,12 @@
 #include <Windows.h>
 #include <ctime>
 #include <fstream>
+#include <string>
+#include <sstream>
 
+#pragma once
 
-
+// Helper Functions
 void setConsoleColor(int color) {
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	SetConsoleTextAttribute(hConsole, color);
@@ -40,28 +43,120 @@ std::string Graph::get_color_hex(int color) const {
 }
 
 
-void Edge::print() const {
-	setConsoleColor(color);
-	std::cout << "(" << v1 << "," << v2 << ")";
-	resetConsoleColor();
+//Overloading Functions
+
+// Overload for Vertex Input
+std::istream& operator>>(std::istream& is, Vertex& vertex) {
+	char comma;
+	is >> vertex.id >> comma >> vertex.color >> comma >> vertex.degree;
+	return is;
+}
+
+// Overload for Vertex Output
+std::ostream& operator<<(std::ostream& os, const Vertex& vertex) {
+	os << vertex.id << "," << vertex.color << "," << vertex.degree;
+	return os;
+}
+
+// Overload for Edge Input
+std::istream& operator>>(std::istream& is, Edge& edge) {
+	char comma;
+	is >> edge.v1 >> comma >> edge.v2 >> comma >> edge.color;
+	return is;
+}
+
+// Overload for Edge Output
+std::ostream& operator<<(std::ostream& os, const Edge& edge) {
+	os << edge.v1 << "," << edge.v2 << "," << edge.color;
+	return os;
+}
+
+// Overload for Graph Input
+std::istream& operator>>(std::istream& is, Graph& graph) {
+	std::string verticesLine, edgesLine;
+
+	// Clear the graph before importing
+	graph.V.clear();
+	graph.E.clear();
+
+	// Read vertices line
+	if (getline(is, verticesLine)) {
+		std::stringstream vertexStream(verticesLine);
+		std::string vertexInfo;
+		while (getline(vertexStream, vertexInfo, ':')) {
+			std::stringstream vertexData(vertexInfo);
+			int id, color, degree;
+			char comma;
+
+			if (vertexData >> id >> comma >> color >> comma >> degree) {
+				graph.V.emplace_back(id); // Add vertex to graph
+				graph.V.back().color = color;
+				graph.V.back().degree = degree;
+			}
+		}
+	}
+
+	// Read edges line
+	if (getline(is, edgesLine)) {
+		std::stringstream edgeStream(edgesLine);
+		std::string edgeInfo;
+		while (getline(edgeStream, edgeInfo, ':')) {
+			std::stringstream edgeData(edgeInfo);
+			int v1, v2, color;
+			char comma;
+
+			if (edgeData >> v1 >> comma >> v2 >> comma >> color) {
+				graph.E.emplace_back(v1, v2); // Add edge to graph
+				graph.E.back().color = color;
+			}
+		}
+	}
+
+	return is;
+}
+
+// Overload for Graph Output
+std::ostream& operator<<(std::ostream& os, const Graph& graph) {
+	// Output vertices
+	for (size_t i = 0; i < graph.V.size(); ++i) {
+		os << graph.V[i];
+		if (i != graph.V.size() - 1) os << ":";
+	}
+	os << std::endl;
+
+	// Output edges
+	for (size_t i = 0; i < graph.E.size(); ++i) {
+		os << graph.E[i];
+		if (i != graph.E.size() - 1) os << ":";
+	}
+
+	return os;
 }
 
 
-void Vertex::print() const {
+// Console Print Functions
+void Vertex::cprint() const {
 	setConsoleColor(color);
 	std::cout << id;
 	resetConsoleColor();
 }
 
 
-void Graph::print() const {
+void Edge::cprint() const {
+	setConsoleColor(color);
+	std::cout << "(" << v1 << "," << v2 << ")";
+	resetConsoleColor();
+}
+
+
+void Graph::cprint() const {
 	bool first = true;
 	std::cout << "V(G): {";
 	for (const Vertex& v : V) {
 		if (!first) {
 			std::cout << ", ";
 		}
-		v.print();
+		v.cprint();
 		first = false;
 	}
 	std::cout << "} \n";
@@ -72,7 +167,7 @@ void Graph::print() const {
 		if (!first) {
 			std::cout << ", ";
 		}
-		e.print();
+		e.cprint();
 		first = false;
 	}
 	std::cout << "}\n";
@@ -80,33 +175,43 @@ void Graph::print() const {
 }
 
 
-void Graph::add_vertex(int id, int color = 15) {
-	for (const auto& vertex : V) {
-		if (vertex.id == id) {
-			std::cout << "Vertex " << id << " already exists in the graph." << std::endl;
-			return;
-		}
-	}
-	V.emplace_back(id, color);
-	size_t newSize = max(id + 1, adj.size());
-	for (auto& row : adj) {
-		row.resize(newSize, false); // Extend existing rows
-	}
-	adj.resize(newSize, std::vector<bool>(newSize, false)); // Add new rows
+// Graph Export Functions
+void Vertex::export_vertex(std::ofstream& outputFile) const {
+	outputFile << id << "," << degree << "," << color;
 }
 
 
-void Graph::add_edge(int u, int v, int color) {
-	int maxVertex = max(u, v);
-	if (maxVertex >= adj.size()) {
-		adj.resize(maxVertex + 1, std::vector<bool>(maxVertex + 1, false));
-	}
-	adj[u][v] = true;
-	adj[v][u] = true;
-	E.emplace_back(u, v, color);
+void Edge::export_edge(std::ofstream& outputFile) const {
+	outputFile << v1 << "," << v2 << "," << color;
 }
 
 
+void Graph::export_graph(const std::string& filename) const {
+	std::ofstream outputFile(filename + ".g", std::fstream::trunc);
+	if (!outputFile.is_open()) {
+		std::cerr << "Error opening file!" << std::endl;
+		return;
+	}
+
+	outputFile << *this;
+	outputFile.close();
+}
+
+
+// Graph Import Function
+void Graph::import_graph(const std::string& filename) {
+	std::ifstream inputFile(filename);
+	if (!inputFile.is_open()) {
+		std::cerr << "Error opening file!" << std::endl;
+		return;
+	}
+
+	inputFile >> *this;
+	inputFile.close();
+}
+
+
+// Graph File Writing Functions
 void Vertex::print_to_file(std::ofstream& outputFile, std::string color) const {
 	outputFile << "<span style='color:" << color << "'>" << id << "</span>";
 }
@@ -142,7 +247,7 @@ void Graph::print_to_file(const std::string& filename) const {
 	outputFile << "<h3>Edges:</h3>{";
 	bool firstEdge = true;
 	for (const Edge& e : E) {
-		if (!firstEdge) {  
+		if (!firstEdge) {
 			outputFile << ", ";
 		}
 		e.print_to_file(outputFile, get_color_hex(e.color));
@@ -155,6 +260,45 @@ void Graph::print_to_file(const std::string& filename) const {
 }
 
 
+void Graph::generate_svg(const std::string& filename) const {
+	std::ofstream outputFile(filename);
+	if (!outputFile.is_open()) {
+		std::cerr << "Error opening file!" << std::endl;
+		return;
+	}
+
+	outputFile << "<svg\n";
+
+	// Define Picture
+	outputFile << "	width\"";
+	bool firstVertex = true;
+	for (const Vertex& v : V) {
+		if (!firstVertex) {
+			outputFile << ", ";
+		}
+		v.print_to_file(outputFile, get_color_hex(v.color));
+		firstVertex = false;
+	}
+	outputFile << "}<br>\n";
+
+	// Print edges
+	outputFile << "<h3>Edges:</h3>{";
+	bool firstEdge = true;
+	for (const Edge& e : E) {
+		if (!firstEdge) {
+			outputFile << ", ";
+		}
+		e.print_to_file(outputFile, get_color_hex(e.color));
+		firstEdge = false;
+	}
+	outputFile << "}\n";
+
+	outputFile << "</body></html>" << std::endl;
+	outputFile.close();
+}
+
+
+// Graph Generation Functions
 void Graph::gen_rand_graph(int n, float p) {
 	adj = std::vector<std::vector<bool>>(n, std::vector<bool>(n, false));
 
@@ -179,11 +323,36 @@ void Graph::gen_rand_colors() {
 }
 
 
-bool Graph::has_edge() const {
-	return bool(size(E));
+// Graph Manipulation Functions
+void Graph::add_vertex(int id, int color) {
+	for (const auto& vertex : V) {
+		if (vertex.id == id) {
+			std::cout << "Vertex " << id << " already exists in the graph." << std::endl;
+			return;
+		}
+	}
+	V.emplace_back(id, color);
+	size_t newSize = max(id + 1, adj.size());
+	for (auto& row : adj) {
+		row.resize(newSize, false); // Extend existing rows
+	}
+	adj.resize(newSize, std::vector<bool>(newSize, false)); // Add new rows
 }
 
 
+void Graph::add_edge(int u, int v, int color) {
+	int maxVertex = max(u, v);
+	if (maxVertex >= adj.size()) {
+		adj.resize(maxVertex + 1, std::vector<bool>(maxVertex + 1, false));
+	}
+	adj[u][v] = true;
+	adj[v][u] = true;
+	E.emplace_back(u, v, color);
+}
+
+
+
+//Graph Logic Functions
 void Graph::get_degrees() {
 	for (int i = 0; i < adj.size(); i++) {
 		for (int j = 0; j < adj.size(); j++) {
@@ -192,6 +361,11 @@ void Graph::get_degrees() {
 			}
 		}
 	}
+}
+
+
+bool Graph::has_edge() const {
+	return bool(size(E));
 }
 
 

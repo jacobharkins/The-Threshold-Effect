@@ -1,17 +1,7 @@
 #include<vector>
 #include<iostream>
 
-class Edge {
-public:
-	int v1;
-	int v2;
-	int color;
-
-	Edge(int vertex1, int vertex2) : v1(vertex1), v2(vertex2), color(15){}
-	Edge(int vertex1, int vertex2, int color = 15) : v1(vertex1), v2(vertex2), color(color){}
-	void print() const;
-	void print_to_file(std::ofstream& outputFile, std::string color) const;
-};
+#pragma once
 
 
 class Vertex {
@@ -20,11 +10,38 @@ public:
 	int color;
 	int degree;
 
-	Vertex(int v) : id(v), color(15){}
-	Vertex(int v, int color) : id(v), color(color) {}
-	void print() const;
+	Vertex() : id(-1), color(15), degree(0) {}
+	Vertex(int v) : id(v), color(15), degree(0) {}
+	Vertex(int v, int color) : id(v), color(color), degree(0) {}
+	Vertex(int v, int color, int degree) : id(v), color(color), degree(degree) {}
+
+	friend std::istream& operator>>(std::istream& is, Vertex& vertex);
+	friend std::ostream& operator<<(std::ostream& os, const Vertex& vertex);
+
+	void cprint() const;
+	void export_vertex(std::ofstream& outputFile) const;
 	void print_to_file(std::ofstream& outputFile, std::string color) const;
 };
+
+
+class Edge {
+public:
+	int v1;
+	int v2;
+	int color;
+
+	Edge() : v1(-1), v2(-1), color(15) {}
+	Edge(int vertex1, int vertex2) : v1(vertex1), v2(vertex2), color(15) {}
+	Edge(int vertex1, int vertex2, int color) : v1(vertex1), v2(vertex2), color(color) {}
+
+	friend std::istream& operator>>(std::istream& is, Edge& edge);
+	friend std::ostream& operator<<(std::ostream& os, const Edge& edge);
+
+	void cprint() const;
+	void export_edge(std::ofstream& outputFile) const;
+	void print_to_file(std::ofstream& outputFile, std::string color) const;
+};
+
 
 
 class Graph {
@@ -36,17 +53,22 @@ public:
 	Graph() : V(), E(){}
 	Graph(const std::vector<Vertex>& Vertices, const std::vector<Edge>& Edges) : V(Vertices), E(Edges) {}
 
+	friend std::istream& operator>>(std::istream& is, Graph& graph);
+	friend std::ostream& operator<<(std::ostream& os, const Graph& graph);
 
-	void print() const;										// Print the Graph to the console
+	void cprint() const;										// Print the Graph to the console
 	void print_to_file(const std::string& filename) const;		// Print the Graph to a file
-	void gen_rand_graph(int n, float p);					// Generate Random Graphs
-	void gen_rand_colors();									// Randomly Color the Graph
-	void add_vertex(int id, int color);						// Add a vertex to Graph
-	void add_edge(int u, int v, int color = 15);			// Add a vertex to Graph
-	void get_degrees();										// Get all vertex degrees
-	bool has_edge() const;									// Check if the Graph has an Edge
-	bool has_k3() const;									// Check if the Graph has a k3 Subgraph
-	bool has_k4() const;									// Check if the Graph has a k4 Subgraph
+	void export_graph(const std::string& filename) const;		// Export the Graph to a file
+	void import_graph(const std::string& filename);				// Import the Graph from a file
+	void generate_svg(const std::string& filename) const;		// Generate SVG of graph
+	void gen_rand_graph(int n, float p);						// Generate Random Graphs
+	void gen_rand_colors();										// Randomly Color the Graph
+	void add_vertex(int id, int color = 15);					// Add a Vertex to Graph
+	void add_edge(int u, int v, int color = 15);				// Add an Edge to Graph
+	void get_degrees();											// Get all vertex degrees
+	bool has_edge() const;										// Check if the Graph has an Edge
+	bool has_k3() const;										// Check if the Graph has a k3 Subgraph
+	bool has_k4() const;										// Check if the Graph has a k4 Subgraph
 
 
 private:

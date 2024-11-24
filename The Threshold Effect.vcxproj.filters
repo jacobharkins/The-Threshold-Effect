@@ -25,4 +25,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="graph0.g">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="graph1.g">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>
