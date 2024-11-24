@@ -18,19 +18,21 @@
 
 #include <windows.h>
 #include <string>
-#include "graphs.h" // Your graph header file
+#include "graphs.h"
 
 // Global variables
 HINSTANCE hInst;
 Graph graph;
-
+int graphSize;
+float edgeProbability;
 // Function declarations
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 // Entry point for Win32 applications
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+int WINAPI WinMain(_In_opt_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     hInst = hInstance;
 
+    graph;
     if (!AllocConsole()) {
         std::cerr << "Error allocating console" << std::endl;
         return -1;
@@ -40,11 +42,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         std::cerr << "Failed to redirect stdout to console!" << std::endl;
         return -1;
     }
+    FILE* consoleIn;
+    if (freopen_s(&consoleIn, "CONOUT$", "w", stdin) != 0) {
+        std::cerr << "Failed to redirect stdin to console!" << std::endl;
+        return -1;
+    }
     FILE* consoleErr;
     if (freopen_s(&consoleErr, "CONOUT$", "w", stderr) != 0) {
         std::cerr << "Failed to redirect stderr to console!" << std::endl;
         return -1;
     }
+    std::cout << "test";
+
 
     // Define the window class
     WNDCLASS wc = {};
@@ -124,24 +133,50 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
                 hWnd, (HMENU)1, hInst, nullptr
             );
             CreateWindow(
-                L"BUTTON", L"Export Graph",
+                L"BUTTON", L"CPrint Graph",
                 WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
                 50, 150, 150, 30,
                 hWnd, (HMENU)2, hInst, nullptr
+            );
+            CreateWindow(
+                L"BUTTON", L"Check Edge",
+                WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+                50, 200, 150, 30,
+                hWnd, (HMENU)3, hInst, nullptr
+            );
+            CreateWindow(
+                L"BUTTON", L"Import Graph",
+                WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+                50, 250, 150, 30,
+                hWnd, (HMENU)4, hInst, nullptr
+            );
+            CreateWindow(
+                L"BUTTON", L"Export Graph",
+                WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+                50, 300, 150, 30,
+                hWnd, (HMENU)5, hInst, nullptr
             );
             break;
         }
         case WM_COMMAND: {
             switch (LOWORD(wParam)) {
             case 1:
-                graph.gen_rand_graph(10, 0.5f);                     // Example function call
+                graph.gen_rand_graph(graphSize, edgeProbability);                     // Example function call
                 MessageBox(hWnd, L"Graph Generated!", L"Info", MB_OK);
                 break;
             case 2:
-                graph.export_graph(L"graph.g");
-                MessageBox(hWnd, L"Graph Exported!", L"Info", MB_OK);
+                graph.cprint();
                 break;
-            case 3: { // Import
+            case 3:
+                if (graph.has_edge()) {
+                    MessageBox(hWnd, L"Has Edge", L"Info", MB_OK);
+                }
+                else {
+                    MessageBox(hWnd, L"Does Not Have Edge", L"Info", MB_OK);
+                }
+                break;
+                
+            case 4: { // Import
                 wchar_t filename[MAX_PATH] = L"";
                 OPENFILENAME ofn = {};
                 ofn.lStructSize = sizeof(ofn);
@@ -157,7 +192,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
                 }
                 break;
             }
-            case 4: { // Export
+            case 5: { // Export
                 wchar_t filename[MAX_PATH] = L"";
                 OPENFILENAME ofn = {};
                 ofn.lStructSize = sizeof(ofn);

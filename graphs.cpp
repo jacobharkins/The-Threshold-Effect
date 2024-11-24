@@ -118,16 +118,14 @@ std::wistream& operator>>(std::wistream& is, Graph& graph) {
 // Overload for Graph Output
 std::wostream& operator<<(std::wostream& os, const Graph& graph) {
 	// Output vertices
-	for (size_t i = 0; i < graph.V.size(); ++i) {
-		os << graph.V[i];
-		if (i != graph.V.size() - 1) os << L":";
+	for (const auto& vertex : graph.V) {
+		os << vertex.id << L"," << vertex.color << L"," << vertex.degree << L":";
 	}
 	os << std::endl;
 
 	// Output edges
-	for (size_t i = 0; i < graph.E.size(); ++i) {
-		os << graph.E[i];
-		if (i != graph.E.size() - 1) os << L":";
+	for (const auto& edge : graph.E) {
+		os << edge.v1 << L"," << edge.v2 << L"," << edge.color << L":";
 	}
 
 	return os;
@@ -187,7 +185,7 @@ void Edge::export_edge(std::wofstream& outputFile) const {
 
 
 void Graph::export_graph(const std::wstring& filename) const {
-	std::wofstream outputFile(filename, std::fstream::trunc);
+	std::wofstream outputFile(filename + L".g", std::wfstream::trunc);
 	if (!outputFile.is_open()) {
 		std::cerr << "Error opening file!" << std::endl;
 		return;
