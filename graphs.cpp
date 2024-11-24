@@ -46,34 +46,34 @@ std::string Graph::get_color_hex(int color) const {
 //Overloading Functions
 
 // Overload for Vertex Input
-std::istream& operator>>(std::istream& is, Vertex& vertex) {
-	char comma;
+std::wistream& operator>>(std::wistream& is, Vertex& vertex) {
+	wchar_t comma;
 	is >> vertex.id >> comma >> vertex.color >> comma >> vertex.degree;
 	return is;
 }
 
 // Overload for Vertex Output
-std::ostream& operator<<(std::ostream& os, const Vertex& vertex) {
-	os << vertex.id << "," << vertex.color << "," << vertex.degree;
+std::wostream& operator<<(std::wostream& os, const Vertex& vertex) {
+	os << vertex.id << L"," << vertex.color << L"," << vertex.degree;
 	return os;
 }
 
 // Overload for Edge Input
-std::istream& operator>>(std::istream& is, Edge& edge) {
-	char comma;
+std::wistream& operator>>(std::wistream& is, Edge& edge) {
+	wchar_t comma;
 	is >> edge.v1 >> comma >> edge.v2 >> comma >> edge.color;
 	return is;
 }
 
 // Overload for Edge Output
-std::ostream& operator<<(std::ostream& os, const Edge& edge) {
-	os << edge.v1 << "," << edge.v2 << "," << edge.color;
+std::wostream& operator<<(std::wostream& os, const Edge& edge) {
+	os << edge.v1 << L"," << edge.v2 << L"," << edge.color;
 	return os;
 }
 
 // Overload for Graph Input
-std::istream& operator>>(std::istream& is, Graph& graph) {
-	std::string verticesLine, edgesLine;
+std::wistream& operator>>(std::wistream& is, Graph& graph) {
+	std::wstring verticesLine, edgesLine;
 
 	// Clear the graph before importing
 	graph.V.clear();
@@ -81,12 +81,12 @@ std::istream& operator>>(std::istream& is, Graph& graph) {
 
 	// Read vertices line
 	if (getline(is, verticesLine)) {
-		std::stringstream vertexStream(verticesLine);
-		std::string vertexInfo;
-		while (getline(vertexStream, vertexInfo, ':')) {
-			std::stringstream vertexData(vertexInfo);
+		std::wstringstream vertexStream(verticesLine);
+		std::wstring vertexInfo;
+		while (getline(vertexStream, vertexInfo, L':')) {
+			std::wstringstream vertexData(vertexInfo);
 			int id, color, degree;
-			char comma;
+			wchar_t comma;
 
 			if (vertexData >> id >> comma >> color >> comma >> degree) {
 				graph.V.emplace_back(id); // Add vertex to graph
@@ -98,12 +98,12 @@ std::istream& operator>>(std::istream& is, Graph& graph) {
 
 	// Read edges line
 	if (getline(is, edgesLine)) {
-		std::stringstream edgeStream(edgesLine);
-		std::string edgeInfo;
-		while (getline(edgeStream, edgeInfo, ':')) {
-			std::stringstream edgeData(edgeInfo);
+		std::wstringstream edgeStream(edgesLine);
+		std::wstring edgeInfo;
+		while (getline(edgeStream, edgeInfo, L':')) {
+			std::wstringstream edgeData(edgeInfo);
 			int v1, v2, color;
-			char comma;
+			wchar_t comma;
 
 			if (edgeData >> v1 >> comma >> v2 >> comma >> color) {
 				graph.E.emplace_back(v1, v2); // Add edge to graph
@@ -116,18 +116,18 @@ std::istream& operator>>(std::istream& is, Graph& graph) {
 }
 
 // Overload for Graph Output
-std::ostream& operator<<(std::ostream& os, const Graph& graph) {
+std::wostream& operator<<(std::wostream& os, const Graph& graph) {
 	// Output vertices
 	for (size_t i = 0; i < graph.V.size(); ++i) {
 		os << graph.V[i];
-		if (i != graph.V.size() - 1) os << ":";
+		if (i != graph.V.size() - 1) os << L":";
 	}
 	os << std::endl;
 
 	// Output edges
 	for (size_t i = 0; i < graph.E.size(); ++i) {
 		os << graph.E[i];
-		if (i != graph.E.size() - 1) os << ":";
+		if (i != graph.E.size() - 1) os << L":";
 	}
 
 	return os;
@@ -176,18 +176,18 @@ void Graph::cprint() const {
 
 
 // Graph Export Functions
-void Vertex::export_vertex(std::ofstream& outputFile) const {
-	outputFile << id << "," << degree << "," << color;
+void Vertex::export_vertex(std::wofstream& outputFile) const {
+	outputFile << id << L"," << degree << L"," << color;
 }
 
 
-void Edge::export_edge(std::ofstream& outputFile) const {
-	outputFile << v1 << "," << v2 << "," << color;
+void Edge::export_edge(std::wofstream& outputFile) const {
+	outputFile << v1 << L"," << v2 << L"," << color;
 }
 
 
-void Graph::export_graph(const std::string& filename) const {
-	std::ofstream outputFile(filename + ".g", std::fstream::trunc);
+void Graph::export_graph(const std::wstring& filename) const {
+	std::wofstream outputFile(filename, std::fstream::trunc);
 	if (!outputFile.is_open()) {
 		std::cerr << "Error opening file!" << std::endl;
 		return;
@@ -199,8 +199,8 @@ void Graph::export_graph(const std::string& filename) const {
 
 
 // Graph Import Function
-void Graph::import_graph(const std::string& filename) {
-	std::ifstream inputFile(filename);
+void Graph::import_graph(const std::wstring& filename) {
+	std::wifstream inputFile(filename);
 	if (!inputFile.is_open()) {
 		std::cerr << "Error opening file!" << std::endl;
 		return;

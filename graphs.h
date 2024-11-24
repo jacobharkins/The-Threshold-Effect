@@ -15,11 +15,11 @@ public:
 	Vertex(int v, int color) : id(v), color(color), degree(0) {}
 	Vertex(int v, int color, int degree) : id(v), color(color), degree(degree) {}
 
-	friend std::istream& operator>>(std::istream& is, Vertex& vertex);
-	friend std::ostream& operator<<(std::ostream& os, const Vertex& vertex);
+	friend std::wistream& operator>>(std::wistream& is, Vertex& vertex);
+	friend std::wostream& operator<<(std::wostream& os, const Vertex& vertex);
 
 	void cprint() const;
-	void export_vertex(std::ofstream& outputFile) const;
+	void export_vertex(std::wofstream& outputFile) const;
 	void print_to_file(std::ofstream& outputFile, std::string color) const;
 };
 
@@ -34,11 +34,11 @@ public:
 	Edge(int vertex1, int vertex2) : v1(vertex1), v2(vertex2), color(15) {}
 	Edge(int vertex1, int vertex2, int color) : v1(vertex1), v2(vertex2), color(color) {}
 
-	friend std::istream& operator>>(std::istream& is, Edge& edge);
-	friend std::ostream& operator<<(std::ostream& os, const Edge& edge);
+	friend std::wistream& operator>>(std::wistream& is, Edge& edge);
+	friend std::wostream& operator<<(std::wostream& os, const Edge& edge);
 
 	void cprint() const;
-	void export_edge(std::ofstream& outputFile) const;
+	void export_edge(std::wofstream& outputFile) const;
 	void print_to_file(std::ofstream& outputFile, std::string color) const;
 };
 
@@ -53,13 +53,13 @@ public:
 	Graph() : V(), E(){}
 	Graph(const std::vector<Vertex>& Vertices, const std::vector<Edge>& Edges) : V(Vertices), E(Edges) {}
 
-	friend std::istream& operator>>(std::istream& is, Graph& graph);
-	friend std::ostream& operator<<(std::ostream& os, const Graph& graph);
+	friend std::wistream& operator>>(std::wistream& is, Graph& graph);
+	friend std::wostream& operator<<(std::wostream& os, const Graph& graph);
 
 	void cprint() const;										// Print the Graph to the console
 	void print_to_file(const std::string& filename) const;		// Print the Graph to a file
-	void export_graph(const std::string& filename) const;		// Export the Graph to a file
-	void import_graph(const std::string& filename);				// Import the Graph from a file
+	void export_graph(const std::wstring& filename) const;		// Export the Graph to a file
+	void import_graph(const std::wstring& filename);			// Import the Graph from a file
 	void generate_svg(const std::string& filename) const;		// Generate SVG of graph
 	void gen_rand_graph(int n, float p);						// Generate Random Graphs
 	void gen_rand_colors();										// Randomly Color the Graph
