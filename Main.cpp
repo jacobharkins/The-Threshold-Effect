@@ -16,17 +16,192 @@
 //	graphs[1].cprint();
 //}
 
-#include <windows.h>
-#include <string>
 #include "graphs.h"
+
+// Constant Values
+constexpr int BUTTON_WIDTH = 150;
+constexpr int BUTTON_HEIGHT = 30;
+constexpr int GRAPH_PANEL_HEIGHT = 400;   
+constexpr int LEFT_PANEL_WIDTH = 200;
+constexpr int VERTEX_RADIUS = 10;
+
 
 // Global variables
 HINSTANCE hInst;
+HWND hLeftPanel;
+HWND hGraphPanel;
+HWND hWndGraphPanel; 
 Graph graph;
-int graphSize;
-float edgeProbability;
-// Function declarations
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+int graphSize = 0;
+float edgeProbability = 0;
+int gridSize;
+
+
+
+// Function to create the UI buttons and the graph panel
+// Create UI elements, dividing the window into left and right panels
+static void create_UI_elements(HWND hWnd) {
+    // Left panel (buttons)
+    hLeftPanel = CreateWindow(L"STATIC", L"Left Panel",
+        WS_CHILD | WS_VISIBLE | SS_BLACKFRAME,
+        0, 0, LEFT_PANEL_WIDTH, 600, hWnd, NULL, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
+
+    // Right panel (graph area)
+    hGraphPanel = CreateWindow(L"STATIC", L"Graph Panel",
+        WS_CHILD | WS_VISIBLE | SS_BLACKFRAME,
+        LEFT_PANEL_WIDTH, 0, 600, 600, hWnd, NULL, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
+
+    // Create buttons for the left panel (inside hLeftPanel)
+    CreateWindow(L"BUTTON", L"Generate Graph",
+        WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+        10, 10, 150, 30, hLeftPanel, (HMENU)1, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
+
+    CreateWindow(L"BUTTON", L"Export Graph",
+        WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+        10, 50, 150, 30, hLeftPanel, (HMENU)2, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
+
+    // Add more buttons as needed
+}
+
+static void resize_ui_elements(HWND hWnd, LPARAM lParam) {
+    // Get the new size of the window
+    int newWidth = LOWORD(lParam);
+    int newHeight = HIWORD(lParam);
+
+    // Adjust the width of the left panel (keep it fixed)
+    SetWindowPos(hLeftPanel, NULL, 0, 0, LEFT_PANEL_WIDTH, newHeight, SWP_NOZORDER);
+
+    // Adjust the right panel (graph area) to take up remaining space
+    SetWindowPos(hGraphPanel, NULL, LEFT_PANEL_WIDTH, 0, newWidth - LEFT_PANEL_WIDTH, newHeight, SWP_NOZORDER);
+}
+
+// Function to handle drawing the graph on the panel
+static void draw_graph(HDC hdc){
+    // Set up the drawing context
+    HPEN hPen, hOldPen;
+    HBRUSH hBrush, hOldBrush;
+    hPen = CreatePen(PS_SOLID, 2, RGB(0, 0, 0));  // Default pen for edges (black)
+    hBrush = CreateSolidBrush(RGB(0, 0, 0));    // Default brush for vertices (black)
+
+    hOldPen = (HPEN)SelectObject(hdc, hPen);
+    hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+
+    // Draw edges
+    for (const Edge& edge : graph.E) {
+        const int& v1 = edge.v1;
+        const int& v2 = edge.v2;
+
+        // Set the edge color
+        HPEN hPen = CreatePen(PS_SOLID, 2, hex_to_rgb(edge.color));  // Use edge color
+        SelectObject(hdc, hPen);
+
+        // Draw the line between vertices
+        MoveToEx(hdc, get_2d_coords(v1, gridSize).first, get_2d_coords(v1, gridSize).second, NULL);
+        LineTo(hdc, get_2d_coords(v2, gridSize).first, get_2d_coords(v2, gridSize).second);
+
+        // Clean up the pen after use
+        DeleteObject(hPen);
+    }
+
+    // Draw vertices
+    for (const auto& vertex : graph.V) {
+        const int& id = vertex.id;
+        const int& x = get_2d_coords(id, gridSize).first;
+        const int& y = get_2d_coords(id, gridSize).second;
+        // Set the vertex color
+        hBrush = CreateSolidBrush(hex_to_rgb(vertex.color));  // Use vertex color
+        SelectObject(hdc, hBrush);
+
+        // Draw a circle for each vertex
+        Ellipse(hdc, x - VERTEX_RADIUS, y - VERTEX_RADIUS,
+            x + VERTEX_RADIUS, y + VERTEX_RADIUS);
+
+        // Clean up the brush after use
+        DeleteObject(hBrush);
+    }
+
+    // Restore the original pen and brush
+    SelectObject(hdc, hOldPen);
+    SelectObject(hdc, hOldBrush);
+
+    // Delete objects
+    DeleteObject(hPen);
+    DeleteObject(hBrush);
+}
+
+// Function to process button clicks
+void process_button_click(HWND hWnd, WPARAM wParam) {
+    switch (LOWORD(wParam)) {
+    case 1: {
+        // Generate graph
+        MessageBox(hWnd, L"Generating Graph...", L"Info", MB_OK);
+        // Invalidate the window to force a redraw
+        InvalidateRect(hWnd, NULL, TRUE); // NULL means invalidate the entire window
+        UpdateWindow(hWnd); // Optional: immediately trigger WM_PAINT
+        break;
+    }
+    case 2: {
+        // Export graph
+        MessageBox(hWnd, L"Exporting Graph...", L"Info", MB_OK);
+        // Call export function here
+        break;
+    }
+    case 3: {
+        // Import graph
+        MessageBox(hWnd, L"Importing Graph...", L"Info", MB_OK);
+        // Call import function here
+        break;
+    }
+    }
+}
+
+// Window procedure to handle messages
+LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+    switch (message) {
+    case WM_CREATE:
+        create_UI_elements(hWnd);
+        break;
+    case WM_PAINT: {
+        // Retrieve the HDC for the window
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hWnd, &ps);
+
+        // Draw your graph
+        draw_graph(hdc);  // Example: 10 vertices, canvas size 400x400
+
+        EndPaint(hWnd, &ps);  // End painting, releasing HDC
+        break;
+    }
+    case WM_COMMAND:
+        process_button_click(hWnd, wParam);
+        break;
+
+    case WM_SIZE: {
+        // Handle window resizing, update the layout of UI elements
+        int width = LOWORD(lParam);
+        int height = HIWORD(lParam);
+
+        // Resize graph panel
+        MoveWindow(hWndGraphPanel, 0, GRAPH_PANEL_HEIGHT, width, height - GRAPH_PANEL_HEIGHT, TRUE);
+
+        // You can resize other controls (buttons) based on the window size too.
+        break;
+    }
+
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        break;
+
+    default:
+        return DefWindowProc(hWnd, message, wParam, lParam);
+    }
+    return 0;
+}
+//// Function declarations
+//LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+
+
 
 // Entry point for Win32 applications
 int WINAPI WinMain(_In_opt_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
@@ -52,36 +227,29 @@ int WINAPI WinMain(_In_opt_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
         std::cerr << "Failed to redirect stderr to console!" << std::endl;
         return -1;
     }
-    std::cout << "test";
 
+    WNDCLASSEX wcex = {};
+    wcex.cbSize = sizeof(WNDCLASSEX);
+    wcex.lpfnWndProc = WindowProc;     // Set window procedure
+    wcex.hInstance = hInstance;
+    wcex.lpszClassName = L"GraphAppClass";
 
-    // Define the window class
-    WNDCLASS wc = {};
-    wc.lpfnWndProc = WndProc;
-    wc.hInstance = hInstance;
-    wc.lpszClassName = L"GraphApp";
+    RegisterClassEx(&wcex);
 
-    RegisterClass(&wc);
 
     // Create the window
-    HWND hWnd = CreateWindowEx(
-        0,
-        L"GraphApp",
-        L"Graph Visualization",
-        WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-        nullptr,
-        nullptr,
-        hInstance,
-        nullptr
-    );
+    HWND hWnd = CreateWindow(L"GraphAppClass", L"Graph Application",
+        WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
+        800, 600, NULL, NULL, hInstance, NULL);
+
+    ShowWindow(hWnd, nCmdShow);
+    UpdateWindow(hWnd);
 
     if (!hWnd) {
         MessageBox(nullptr, L"Failed to create window!", L"Error", MB_OK | MB_ICONERROR);
         return 0;
     }
 
-    ShowWindow(hWnd, nCmdShow);
 
     // Message loop
     MSG msg = {};
@@ -90,134 +258,11 @@ int WINAPI WinMain(_In_opt_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
         DispatchMessage(&msg);
     }
 
+    FreeConsole();
     return (int)msg.wParam;
 }
 
-// Window procedure for handling messages
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-    switch (message) {
-        case WM_PAINT: {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
 
-            // Example rendering: draw vertices and edges
-            for (const Edge& edge : graph.E) {
-                MoveToEx(hdc, edge.v1 * 50, edge.v1 * 50, nullptr);
-                LineTo(hdc, edge.v2 * 50, edge.v2 * 50);
-            }
-
-            for (const Vertex& vertex : graph.V) {
-                Ellipse(hdc, vertex.id * 50 - 10, vertex.id * 50 - 10, vertex.id * 50 + 10, vertex.id * 50 + 10);
-            }
-
-            EndPaint(hWnd, &ps);
-            break;
-        }
-
-        case WM_DESTROY: {
-            PostQuitMessage(0);
-            break;
-        }
-        case WM_CREATE: {
-            HMENU hMenu = CreateMenu();
-            HMENU hFileMenu = CreateMenu();
-
-            AppendMenu(hFileMenu, MF_STRING, 3, L"Import");
-            AppendMenu(hFileMenu, MF_STRING, 4, L"Export");
-            AppendMenu(hMenu, MF_POPUP, (UINT_PTR)hFileMenu, L"File");
-            SetMenu(hWnd, hMenu);
-            CreateWindow(
-                L"BUTTON", L"Generate Graph",
-                WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-                50, 100, 150, 30,
-                hWnd, (HMENU)1, hInst, nullptr
-            );
-            CreateWindow(
-                L"BUTTON", L"CPrint Graph",
-                WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-                50, 150, 150, 30,
-                hWnd, (HMENU)2, hInst, nullptr
-            );
-            CreateWindow(
-                L"BUTTON", L"Check Edge",
-                WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-                50, 200, 150, 30,
-                hWnd, (HMENU)3, hInst, nullptr
-            );
-            CreateWindow(
-                L"BUTTON", L"Import Graph",
-                WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-                50, 250, 150, 30,
-                hWnd, (HMENU)4, hInst, nullptr
-            );
-            CreateWindow(
-                L"BUTTON", L"Export Graph",
-                WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-                50, 300, 150, 30,
-                hWnd, (HMENU)5, hInst, nullptr
-            );
-            break;
-        }
-        case WM_COMMAND: {
-            switch (LOWORD(wParam)) {
-            case 1:
-                graph.gen_rand_graph(graphSize, edgeProbability);                     // Example function call
-                MessageBox(hWnd, L"Graph Generated!", L"Info", MB_OK);
-                break;
-            case 2:
-                graph.cprint();
-                break;
-            case 3:
-                if (graph.has_edge()) {
-                    MessageBox(hWnd, L"Has Edge", L"Info", MB_OK);
-                }
-                else {
-                    MessageBox(hWnd, L"Does Not Have Edge", L"Info", MB_OK);
-                }
-                break;
-                
-            case 4: { // Import
-                wchar_t filename[MAX_PATH] = L"";
-                OPENFILENAME ofn = {};
-                ofn.lStructSize = sizeof(ofn);
-                ofn.hwndOwner = hWnd;
-                ofn.lpstrFilter = L"Graph Files\0*.g\0";
-                ofn.lpstrFile = filename;
-                ofn.nMaxFile = MAX_PATH;
-                ofn.Flags = OFN_FILEMUSTEXIST;
-
-                if (GetOpenFileName(&ofn)) {
-                    graph.import_graph(filename);
-                    MessageBox(hWnd, L"Graph Imported!", L"Info", MB_OK);
-                }
-                break;
-            }
-            case 5: { // Export
-                wchar_t filename[MAX_PATH] = L"";
-                OPENFILENAME ofn = {};
-                ofn.lStructSize = sizeof(ofn);
-                ofn.hwndOwner = hWnd;
-                ofn.lpstrFilter = L"Graph Files\0*.g\0";
-                ofn.lpstrFile = filename;
-                ofn.nMaxFile = MAX_PATH;
-                ofn.Flags = OFN_OVERWRITEPROMPT;
-
-                if (GetSaveFileName(&ofn)) {
-                    graph.export_graph(filename);
-                    MessageBox(hWnd, L"Graph Exported!", L"Info", MB_OK);
-                }
-                break;
-            }
-
-            }
-            break;
-        }
-        default:
-            return DefWindowProc(hWnd, message, wParam, lParam);
-    }
-    FreeConsole();
-    return 0;
-}
 
 
 

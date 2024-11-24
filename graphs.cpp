@@ -1,46 +1,7 @@
 #include "graphs.h"
-#include <Windows.h>
-#include <ctime>
-#include <fstream>
-#include <string>
-#include <sstream>
-
-#pragma once
 
 // Helper Functions
-void setConsoleColor(int color) {
-	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleTextAttribute(hConsole, color);
-}
 
-
-void resetConsoleColor() {
-	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleTextAttribute(hConsole, 15);
-}
-
-
-std::string Graph::get_color_hex(int color) const {
-	switch (color) {
-		case 0: return "#000000";  // Black
-		case 1: return "#0000AA";  // Blue
-		case 2: return "#00AA00";  // Green
-		case 3: return "#00AAAA";  // Aqua
-		case 4: return "#AA0000";  // Red
-		case 5: return "#AA00AA";  // Purple
-		case 6: return "#AAAA00";  // Yellow
-		case 7: return "#AAAAAA";  // White
-		case 8: return "#555555";  // Gray
-		case 9: return "#5555FF";  // Light Blue
-		case 10: return "#55FF55"; // Light Green
-		case 11: return "#55FFFF"; // Light Aqua
-		case 12: return "#FF5555"; // Light Red
-		case 13: return "#FF55FF"; // Light Purple
-		case 14: return "#FFFF55"; // Light Yellow
-		case 15: return "#FFFFFF"; // Bright White
-		default: return "#000000"; // Default to black if color code is out of range
-	}
-}
 
 
 //Overloading Functions
@@ -48,26 +9,26 @@ std::string Graph::get_color_hex(int color) const {
 // Overload for Vertex Input
 std::wistream& operator>>(std::wistream& is, Vertex& vertex) {
 	wchar_t comma;
-	is >> vertex.id >> comma >> vertex.color >> comma >> vertex.degree;
+	is >> vertex.id >> comma >> string_to_wchar(vertex.color) >> comma >> vertex.degree;
 	return is;
 }
 
 // Overload for Vertex Output
 std::wostream& operator<<(std::wostream& os, const Vertex& vertex) {
-	os << vertex.id << L"," << vertex.color << L"," << vertex.degree;
+	os << vertex.id << L"," << string_to_wchar(vertex.color) << L"," << vertex.degree;
 	return os;
 }
 
 // Overload for Edge Input
 std::wistream& operator>>(std::wistream& is, Edge& edge) {
 	wchar_t comma;
-	is >> edge.v1 >> comma >> edge.v2 >> comma >> edge.color;
+	is >> edge.v1 >> comma >> edge.v2 >> comma >> string_to_wchar(edge.color);
 	return is;
 }
 
 // Overload for Edge Output
 std::wostream& operator<<(std::wostream& os, const Edge& edge) {
-	os << edge.v1 << L"," << edge.v2 << L"," << edge.color;
+	os << edge.v1 << L"," << edge.v2 << L"," << string_to_wchar(edge.color);
 	return os;
 }
 
@@ -119,13 +80,13 @@ std::wistream& operator>>(std::wistream& is, Graph& graph) {
 std::wostream& operator<<(std::wostream& os, const Graph& graph) {
 	// Output vertices
 	for (const auto& vertex : graph.V) {
-		os << vertex.id << L"," << vertex.color << L"," << vertex.degree << L":";
+		os << vertex.id << L"," << string_to_wchar(vertex.color) << L"," << vertex.degree << L":";
 	}
 	os << std::endl;
 
 	// Output edges
 	for (const auto& edge : graph.E) {
-		os << edge.v1 << L"," << edge.v2 << L"," << edge.color << L":";
+		os << edge.v1 << L"," << edge.v2 << L"," << string_to_wchar(edge.color) << L":";
 	}
 
 	return os;
@@ -134,14 +95,14 @@ std::wostream& operator<<(std::wostream& os, const Graph& graph) {
 
 // Console Print Functions
 void Vertex::cprint() const {
-	setConsoleColor(color);
+	setConsoleColor(color_to_console_color(hex_to_rgb(color)));
 	std::cout << id;
 	resetConsoleColor();
 }
 
 
 void Edge::cprint() const {
-	setConsoleColor(color);
+	setConsoleColor(color_to_console_color(hex_to_rgb(color)));
 	std::cout << "(" << v1 << "," << v2 << ")";
 	resetConsoleColor();
 }
@@ -175,12 +136,12 @@ void Graph::cprint() const {
 
 // Graph Export Functions
 void Vertex::export_vertex(std::wofstream& outputFile) const {
-	outputFile << id << L"," << degree << L"," << color;
+	outputFile << id << L"," << degree << L"," << string_to_wchar(color);
 }
 
 
 void Edge::export_edge(std::wofstream& outputFile) const {
-	outputFile << v1 << L"," << v2 << L"," << color;
+	outputFile << v1 << L"," << v2 << L"," << string_to_wchar(color);
 }
 
 
@@ -236,7 +197,7 @@ void Graph::print_to_file(const std::string& filename) const {
 		if (!firstVertex) {
 			outputFile << ", ";
 		}
-		v.print_to_file(outputFile, get_color_hex(v.color));
+		v.print_to_file(outputFile, v.color);
 		firstVertex = false;
 	}
 	outputFile << "}<br>\n";
@@ -248,7 +209,7 @@ void Graph::print_to_file(const std::string& filename) const {
 		if (!firstEdge) {
 			outputFile << ", ";
 		}
-		e.print_to_file(outputFile, get_color_hex(e.color));
+		e.print_to_file(outputFile, e.color);
 		firstEdge = false;
 	}
 	outputFile << "}\n";
@@ -258,42 +219,42 @@ void Graph::print_to_file(const std::string& filename) const {
 }
 
 
-void Graph::generate_svg(const std::string& filename) const {
-	std::ofstream outputFile(filename);
-	if (!outputFile.is_open()) {
-		std::cerr << "Error opening file!" << std::endl;
-		return;
-	}
-
-	outputFile << "<svg\n";
-
-	// Define Picture
-	outputFile << "	width\"";
-	bool firstVertex = true;
-	for (const Vertex& v : V) {
-		if (!firstVertex) {
-			outputFile << ", ";
-		}
-		v.print_to_file(outputFile, get_color_hex(v.color));
-		firstVertex = false;
-	}
-	outputFile << "}<br>\n";
-
-	// Print edges
-	outputFile << "<h3>Edges:</h3>{";
-	bool firstEdge = true;
-	for (const Edge& e : E) {
-		if (!firstEdge) {
-			outputFile << ", ";
-		}
-		e.print_to_file(outputFile, get_color_hex(e.color));
-		firstEdge = false;
-	}
-	outputFile << "}\n";
-
-	outputFile << "</body></html>" << std::endl;
-	outputFile.close();
-}
+//void Graph::generate_svg(const std::string& filename) const {
+//	std::ofstream outputFile(filename);
+//	if (!outputFile.is_open()) {
+//		std::cerr << "Error opening file!" << std::endl;
+//		return;
+//	}
+//
+//	outputFile << "<svg\n";
+//
+//	// Define Picture
+//	outputFile << "	width\"";
+//	bool firstVertex = true;
+//	for (const Vertex& v : V) {
+//		if (!firstVertex) {
+//			outputFile << ", ";
+//		}
+//		v.print_to_file(outputFile, get_color_hex(v.color));
+//		firstVertex = false;
+//	}
+//	outputFile << "}<br>\n";
+//
+//	// Print edges
+//	outputFile << "<h3>Edges:</h3>{";
+//	bool firstEdge = true;
+//	for (const Edge& e : E) {
+//		if (!firstEdge) {
+//			outputFile << ", ";
+//		}
+//		e.print_to_file(outputFile, get_color_hex(e.color));
+//		firstEdge = false;
+//	}
+//	outputFile << "}\n";
+//
+//	outputFile << "</body></html>" << std::endl;
+//	outputFile.close();
+//}
 
 
 // Graph Generation Functions
@@ -312,17 +273,39 @@ void Graph::gen_rand_graph(int n, float p) {
 
 
 void Graph::gen_rand_colors() {
-	for (int i = 0; i < size(E); i++) {
-		E[i].color = rand() % 14 + 1;
+	for (Vertex vertex : V) {
+		// Generate random RGB components
+		int r = rand() % 256;  // Random number between 0 and 255
+		int g = rand() % 256;
+		int b = rand() % 256;
+
+		// Convert RGB to a hex string
+		std::stringstream ss;
+		ss << "#" << std::setw(2) << std::setfill('0') << std::hex << r
+			<< std::setw(2) << std::setfill('0') << g
+			<< std::setw(2) << std::setfill('0') << b;
+
+		vertex.color = ss.str();
 	}
-	for (int i = 0; i < size(V); i++) {
-		V[i].color = rand() % 14 + 1;
+	for (Edge edge : E) {
+		// Generate random RGB components
+		int r = rand() % 256;  // Random number between 0 and 255
+		int g = rand() % 256;
+		int b = rand() % 256;
+
+		// Convert RGB to a hex string
+		std::stringstream ss;
+		ss << "#" << std::setw(2) << std::setfill('0') << std::hex << r
+			<< std::setw(2) << std::setfill('0') << g
+			<< std::setw(2) << std::setfill('0') << b;
+
+		edge.color = ss.str();
 	}
 }
 
 
 // Graph Manipulation Functions
-void Graph::add_vertex(int id, int color) {
+void Graph::add_vertex(int id, std::string color) {
 	for (const auto& vertex : V) {
 		if (vertex.id == id) {
 			std::cout << "Vertex " << id << " already exists in the graph." << std::endl;
@@ -338,7 +321,7 @@ void Graph::add_vertex(int id, int color) {
 }
 
 
-void Graph::add_edge(int u, int v, int color) {
+void Graph::add_edge(int u, int v, std::string color) {
 	int maxVertex = max(u, v);
 	if (maxVertex >= adj.size()) {
 		adj.resize(maxVertex + 1, std::vector<bool>(maxVertex + 1, false));
