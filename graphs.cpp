@@ -1,3 +1,11 @@
+
+#include <Windows.h>
+#include <fstream>
+#include <sstream>
+#include <cwchar>
+#include <iomanip>
+#include<iostream>
+#include <ctime>
 #include "graphs.h"
 
 // Helper Functions
@@ -96,6 +104,7 @@ std::wostream& operator<<(std::wostream& os, const Graph& graph) {
 // Console Print Functions
 void Vertex::cprint() const {
 	setConsoleColor(color_to_console_color(hex_to_rgb(color)));
+	std::cout << color_to_console_color(hex_to_rgb(color)) << std::endl;
 	std::cout << id;
 	resetConsoleColor();
 }
@@ -103,6 +112,7 @@ void Vertex::cprint() const {
 
 void Edge::cprint() const {
 	setConsoleColor(color_to_console_color(hex_to_rgb(color)));
+	std::cout << color_to_console_color(hex_to_rgb(color)) << std::endl;
 	std::cout << "(" << v1 << "," << v2 << ")";
 	resetConsoleColor();
 }
@@ -112,6 +122,7 @@ void Graph::cprint() const {
 	bool first = true;
 	std::cout << "V(G): {";
 	for (const Vertex& v : V) {
+		std::cout << v.color << std::endl;
 		if (!first) {
 			std::cout << ", ";
 		}
@@ -123,6 +134,7 @@ void Graph::cprint() const {
 	first = true;
 	std::cout << "E(G): {";
 	for (const Edge& e : E) {
+		std::cout << e.color << std::endl;
 		if (!first) {
 			std::cout << ", ";
 		}
@@ -146,13 +158,13 @@ void Edge::export_edge(std::wofstream& outputFile) const {
 
 
 void Graph::export_graph(const std::wstring& filename) const {
-	std::wofstream outputFile(filename + L".g", std::wfstream::trunc);
+	std::wofstream outputFile(filename, std::wfstream::trunc);
 	if (!outputFile.is_open()) {
 		std::cerr << "Error opening file!" << std::endl;
 		return;
 	}
 
-	outputFile << *this;
+	outputFile << this;
 	outputFile.close();
 }
 
@@ -259,6 +271,8 @@ void Graph::print_to_file(const std::string& filename) const {
 
 // Graph Generation Functions
 void Graph::gen_rand_graph(int n, float p) {
+	V.clear();
+	E.clear();
 	adj = std::vector<std::vector<bool>>(n, std::vector<bool>(n, false));
 
 	for (int i = 0; i < n; i++) {
@@ -273,29 +287,30 @@ void Graph::gen_rand_graph(int n, float p) {
 
 
 void Graph::gen_rand_colors() {
-	for (Vertex vertex : V) {
-		// Generate random RGB components
-		int r = rand() % 256;  // Random number between 0 and 255
+	for (Vertex& vertex : V) {
+		int r = rand() % 256;  
 		int g = rand() % 256;
 		int b = rand() % 256;
 
 		// Convert RGB to a hex string
 		std::stringstream ss;
-		ss << "#" << std::setw(2) << std::setfill('0') << std::hex << r
+		ss << "#" << std::hex
+			<< std::setw(2) << std::setfill('0') << r
 			<< std::setw(2) << std::setfill('0') << g
 			<< std::setw(2) << std::setfill('0') << b;
 
 		vertex.color = ss.str();
 	}
-	for (Edge edge : E) {
-		// Generate random RGB components
-		int r = rand() % 256;  // Random number between 0 and 255
+	std::cout << std::endl;
+	for (Edge& edge : E) {
+		int r = rand() % 256;  
 		int g = rand() % 256;
 		int b = rand() % 256;
 
 		// Convert RGB to a hex string
 		std::stringstream ss;
-		ss << "#" << std::setw(2) << std::setfill('0') << std::hex << r
+		ss << "#" << std::hex
+			<< std::setw(2) << std::setfill('0') << r
 			<< std::setw(2) << std::setfill('0') << g
 			<< std::setw(2) << std::setfill('0') << b;
 

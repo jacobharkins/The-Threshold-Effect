@@ -1,9 +1,8 @@
 #pragma once
-#include <commdlg.h>
 #include <windows.h>
-#include <string>
+#include <commdlg.h>
 #include <cmath>
-
+#include <string>
 
 enum ConsoleColor {
     BLACK = 0, BLUE = 1, GREEN = 2, CYAN = 3,

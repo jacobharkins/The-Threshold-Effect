@@ -1,6 +1,7 @@
 #include "utilities.h"
 
 
+
 void setConsoleColor(int color) {
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleTextAttribute(hConsole, color);
@@ -16,7 +17,7 @@ void resetConsoleColor() {
 COLORREF hex_to_rgb(const std::string& hex) {
     // Hex string must be in the format "#RRGGBB"
     if (hex[0] != L'#' || hex.length() != 7) {
-        return RGB(0, 0, 0);  // Default to black if invalid format
+        return RGB(1, 1, 1);  // Default to black if invalid format
     }
 
     // Parse the hex string

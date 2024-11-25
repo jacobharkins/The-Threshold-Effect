@@ -1,16 +1,14 @@
 #pragma once
-#include<vector>
-#include<iostream>
 #include <Windows.h>
-#include <ctime>
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <iomanip>
-#include <cwchar>
 #include "utilities.h"
-
-
+#include <fstream>
+#include <sstream>
+#include <cwchar>
+#include <iomanip>
+#include<iostream>
+#include <ctime>
+#include <string>
+#include<vector>
 
 class Vertex {
 public:
@@ -38,8 +36,8 @@ public:
 	int v2;
 	std::string color;
 
-	Edge() : v1(-1), v2(-1), color("#000000") {}
-	Edge(int vertex1, int vertex2) : v1(vertex1), v2(vertex2), color("#000000") {}
+	Edge() : v1(-1), v2(-1), color("#FFFFFF") {}
+	Edge(int vertex1, int vertex2) : v1(vertex1), v2(vertex2), color("#FFFFFF") {}
 	Edge(int vertex1, int vertex2, std::string color) : v1(vertex1), v2(vertex2), color(color) {}
 
 	friend std::wistream& operator>>(std::wistream& is, Edge& edge);
