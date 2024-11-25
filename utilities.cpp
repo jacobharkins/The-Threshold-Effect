@@ -59,8 +59,8 @@ int calculate_grid_size(int numVertices) {
 
 
 std::pair<int, int> get_2d_coords(int id, int gridSize) {
-    int x = id % gridSize;      // Column (horizontal position)
-    int y = id / gridSize;      // Row (vertical position)
+    int x = id % gridSize;                                  // Column (horizontal position)
+    int y = id / gridSize;                                  // Row (vertical position)
     return { x, y };
 }
 

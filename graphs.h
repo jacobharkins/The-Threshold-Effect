@@ -75,6 +75,9 @@ public:
 	bool has_edge() const;													// Check if the Graph has an Edge
 	bool has_k3() const;													// Check if the Graph has a k3 Subgraph
 	bool has_k4() const;													// Check if the Graph has a k4 Subgraph
+	bool is_hamiltonian() const;											// Check if the Graph has a Hamiltonian Cycle
 
+private:
+	bool is_hamiltonian_util(int pos, std::vector<int>& path, std::vector<bool>& visited) const;
 };
 

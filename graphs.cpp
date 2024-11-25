@@ -6,6 +6,7 @@
 #include <iomanip>
 #include<iostream>
 #include <ctime>
+
 #include "graphs.h"
 
 // Helper Functions
@@ -104,7 +105,6 @@ std::wostream& operator<<(std::wostream& os, const Graph& graph) {
 // Console Print Functions
 void Vertex::cprint() const {
 	setConsoleColor(color_to_console_color(hex_to_rgb(color)));
-	std::cout << color_to_console_color(hex_to_rgb(color)) << std::endl;
 	std::cout << id;
 	resetConsoleColor();
 }
@@ -112,7 +112,6 @@ void Vertex::cprint() const {
 
 void Edge::cprint() const {
 	setConsoleColor(color_to_console_color(hex_to_rgb(color)));
-	std::cout << color_to_console_color(hex_to_rgb(color)) << std::endl;
 	std::cout << "(" << v1 << "," << v2 << ")";
 	resetConsoleColor();
 }
@@ -122,7 +121,6 @@ void Graph::cprint() const {
 	bool first = true;
 	std::cout << "V(G): {";
 	for (const Vertex& v : V) {
-		std::cout << v.color << std::endl;
 		if (!first) {
 			std::cout << ", ";
 		}
@@ -134,7 +132,6 @@ void Graph::cprint() const {
 	first = true;
 	std::cout << "E(G): {";
 	for (const Edge& e : E) {
-		std::cout << e.color << std::endl;
 		if (!first) {
 			std::cout << ", ";
 		}
@@ -163,7 +160,7 @@ void Graph::export_graph(const std::wstring& filename) const {
 		std::cerr << "Error opening file!" << std::endl;
 		return;
 	}
-
+	outputFile << std::dec;
 	outputFile << this;
 	outputFile.close();
 }
@@ -176,7 +173,7 @@ void Graph::import_graph(const std::wstring& filename) {
 		std::cerr << "Error opening file!" << std::endl;
 		return;
 	}
-
+	inputFile >> std::dec;
 	inputFile >> *this;
 	inputFile.close();
 }
@@ -397,4 +394,42 @@ bool Graph::has_k4() const {
 		}
 	}
 	return false;  
+}
+
+
+bool Graph::is_hamiltonian_util(int pos, std::vector<int>& path, std::vector<bool>& visited) const {
+	if (pos == V.size()) {
+		// Check if the last vertex connects to the first to form a cycle
+		return adj[path[pos - 1]][path[0]];
+	}
+
+	for (int vertex = 0; vertex < V.size(); ++vertex) {
+		if (!visited[vertex] && adj[path[pos - 1]][vertex]) {
+			path[pos] = vertex;
+			visited[vertex] = true;
+
+			if (is_hamiltonian_util(pos + 1, path, visited)) {
+				return true;
+			}
+
+			// Backtrack
+			visited[vertex] = false;
+		}
+	}
+
+	return false;
+}
+
+bool Graph::is_hamiltonian() const {
+	if (V.empty() || E.empty()) {
+		return false;
+	}
+
+	std::vector<int> path(V.size(), -1);    // Store the Hamiltonian path
+	std::vector<bool> visited(V.size(), false);
+
+	path[0] = 0;                           // Start from the first vertex
+	visited[0] = true;
+
+	return is_hamiltonian_util(1, path, visited);
 }

@@ -1,20 +1,50 @@
 #include "graphs.h"
 
+
+
+struct ButtonInfo {
+    const wchar_t* name;
+    int id;
+};
+
 // Constant Values
 constexpr int BUTTON_WIDTH = 150;
 constexpr int BUTTON_HEIGHT = 30;
+constexpr int BUTTON_X = 10;
 constexpr int GRAPH_PANEL_HEIGHT = 400;   
 constexpr int LEFT_PANEL_WIDTH = 200;
 constexpr int VERTEX_RADIUS = 10;
 constexpr int EDGE_WIDTH = 2;
+constexpr int TOP_START = 50;
 
+// Macros
 #define LEFT_START (LEFT_PANEL_WIDTH + 50)
-#define TOP_START 50
 #define RIGHT_END(width) ((width) - 50)
 #define BOTTOM_END(height) ((height) - 50)
 #define GRAPH_WIDTH(width) (RIGHT_END(width) - LEFT_START)
 #define GRAPH_HEIGHT(height) (BOTTOM_END(height) - TOP_START)
 #define GRAPH_SIZE int(rand() % 15)
+#define BUTTON_Y(index) (BUTTON_HEIGHT + 10)* index
+
+#define CREATE_PANEL_BUTTON(buttonName, index)\
+     CreateWindow(L"BUTTON", buttonName,\
+     WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,\
+     BUTTON_X, BUTTON_Y(index), BUTTON_WIDTH, BUTTON_HEIGHT,\
+     hWnd, (HMENU)index, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL)
+
+
+
+std::vector<ButtonInfo> buttonList = {
+    {L"Randomize Graph", 1},
+    {L"Color Graph", 2},
+    {L"Export Graph", 3},
+    {L"Import Graph", 4},
+    {L"Check For Edge", 5},
+    {L"Check For k3", 6},
+    {L"Check For k4", 7},
+    {L"Check Hamiltonian", 8},
+    {L"CPrint", 9}
+};
 
 // Global variables
 HINSTANCE hInst;
@@ -24,6 +54,7 @@ HWND hWndGraphPanel;
 Graph graph;
 
 float edgeProbability = 0.5;
+
 
 
 
@@ -75,7 +106,6 @@ void draw_graph(HDC hdc, int leftStart, int topStart, int rightEnd, int bottomEn
         int x = leftStart + col * cellWidth + cellWidth / 2;
         int y = topStart + row * cellHeight + cellHeight / 2;
 
-        std::cout << "Vertex " << i << " at position: (" << x << ", " << y << ")" << std::endl;
         // Set vertex color using GDI
         COLORREF vertexColor = hex_to_rgb(vertex.color); 
         HBRUSH hBrush = CreateSolidBrush(vertexColor);
@@ -105,41 +135,9 @@ static void create_UI_elements(HWND hWnd) {
         LEFT_PANEL_WIDTH, 0, 0, 0, hWnd, NULL, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
 
     // Create buttons for the left panel (inside hLeftPanel)
-    CreateWindow(L"BUTTON", L"Randomize Graph",
-        WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-        10, 10, 150, 30, 
-        hWnd, (HMENU)1, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
-
-    CreateWindow(L"BUTTON", L"Color Graph",
-        WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-        10, 50, 150, 30, 
-        hWnd, (HMENU)2, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
-
-    CreateWindow(L"BUTTON", L"Export Graph",
-        WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-        10, 90, 150, 30, 
-        hWnd, (HMENU)3, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
-
-    CreateWindow(L"BUTTON", L"Import Graph",
-        WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-        10, 130, 150, 30, 
-        hWnd, (HMENU)4, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
-
-    CreateWindow(L"BUTTON", L"Check For Edge",
-        WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-        10, 170, 150, 30, 
-        hWnd, (HMENU)5, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
-
-    CreateWindow(L"BUTTON", L"Check For k3",
-        WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-        10, 210, 150, 30,
-        hWnd, (HMENU)6, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
-
-    CreateWindow(L"BUTTON", L"Check For k4",
-        WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-        10, 250, 150, 30,
-        hWnd, (HMENU)7, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
-
+    for (ButtonInfo button : buttonList) {
+        CREATE_PANEL_BUTTON(button.name, button.id);
+    }
 }
 
 
@@ -160,25 +158,24 @@ static void resize_ui_elements(HWND hWnd, LPARAM lParam) {
 void process_button_click(HWND hWnd, WPARAM wParam) {
     int commandId = LOWORD(wParam);
         switch (LOWORD(wParam)) {
+        // Generate random graph
         case 1: {
-            // Generate graph
             InvalidateRect(hWnd, NULL, TRUE); 
             graph.gen_rand_graph(GRAPH_SIZE, edgeProbability);
             graph.cprint();
-            // Invalidate the window to force a redraw
             InvalidateRect(hWnd, NULL, TRUE); 
             UpdateWindow(hWnd); 
             break;
         }
+        // Randomly color graph
         case 2: {
-            // Color graph
             graph.gen_rand_colors();
             InvalidateRect(hWnd, NULL, TRUE); 
             UpdateWindow(hWnd); 
             break;
         }
+        // Export graph to file
         case 3: {
-            // Export graph
             wchar_t filename[MAX_PATH] = L"";
             OPENFILENAME ofn = {};
             ofn.lStructSize = sizeof(ofn);
@@ -193,6 +190,7 @@ void process_button_click(HWND hWnd, WPARAM wParam) {
             }
             break;
         }
+        // Import graph from file
         case 4: {
             wchar_t filename[MAX_PATH] = L"";
             OPENFILENAME ofn = {};
@@ -208,7 +206,8 @@ void process_button_click(HWND hWnd, WPARAM wParam) {
             }
             break;
         }
-        case 5: {            // Check Edge in graph
+        // Check Edge in graph
+        case 5: {
             if (graph.has_edge()) {
                 MessageBox(hWnd, L"Contains an Edge", L"Info", MB_OK);
             }
@@ -217,7 +216,8 @@ void process_button_click(HWND hWnd, WPARAM wParam) {
             }
             break;
         }
-        case 6: {           // Check k3 in graph
+        // Check k3 in graph
+        case 6: {
             if (graph.has_k3()) {
                 MessageBox(hWnd, L"Contains a k3", L"Info", MB_OK);
             }
@@ -226,13 +226,29 @@ void process_button_click(HWND hWnd, WPARAM wParam) {
             }
             break;
         }
-        case 7: {           // Check k4 in graph 
+        // Check k4 in graph 
+        case 7: {    
             if (graph.has_k4()) {
                 MessageBox(hWnd, L"Contains a k4", L"Info", MB_OK);
             }
             else {
                 MessageBox(hWnd, L"Does Not Contain a k4", L"Info", MB_OK);
             }
+            break;
+        }
+        // Check if graph is Hamiltonian
+        case 8: {
+            if (graph.is_hamiltonian()) {
+                MessageBox(hWnd, L"Is Hamiltonian", L"Info", MB_OK);
+            }
+            else {
+                MessageBox(hWnd, L"Not Hamiltonian", L"Info", MB_OK);
+            }
+            break;
+        }
+        // CPrint graph
+        case 9: {
+            graph.cprint();
             break;
         }
         default: {
@@ -331,9 +347,10 @@ int WINAPI WinMain(_In_opt_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
 
 
     graph.gen_rand_graph(GRAPH_SIZE, edgeProbability);
-    graph.gen_rand_colors();
+    graph.export_graph(L"Test.g");
+    //graph.gen_rand_colors();
     graph.cprint();
-    graph.export_graph(L"Test");
+    
 
 
     WNDCLASSEX wcex = {};
