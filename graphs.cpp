@@ -9,75 +9,68 @@
 
 #include "graphs.h"
 
-// Helper Functions
-
 
 
 //Overloading Functions
-
-// Overload for Vertex Input
-std::wistream& operator>>(std::wistream& is, Vertex& vertex) {
-	wchar_t comma;
-	is >> vertex.id >> comma >> string_to_wchar(vertex.color) >> comma >> vertex.degree;
+// Overload for Vertex InStream
+std::istream& operator>>(std::istream& is, Vertex& vertex) {
+	char comma;
+	is >> vertex.id >> comma >> vertex.degree >> comma >> vertex.color;
 	return is;
 }
 
-// Overload for Vertex Output
-std::wostream& operator<<(std::wostream& os, const Vertex& vertex) {
-	os << vertex.id << L"," << string_to_wchar(vertex.color) << L"," << vertex.degree;
+// Overload for Vertex OutStream
+std::ostream& operator<<(std::ostream& os, const Vertex& vertex) {
+	os << vertex.id << "," << vertex.degree << "," << vertex.color;
 	return os;
 }
 
-// Overload for Edge Input
-std::wistream& operator>>(std::wistream& is, Edge& edge) {
-	wchar_t comma;
-	is >> edge.v1 >> comma >> edge.v2 >> comma >> string_to_wchar(edge.color);
+// Overload for Edge InStream
+std::istream& operator>>(std::istream& is, Edge& edge) {
+	char comma;
+	is >> edge.v1 >> comma >> edge.v2 >> comma >> edge.color;
 	return is;
 }
 
-// Overload for Edge Output
-std::wostream& operator<<(std::wostream& os, const Edge& edge) {
-	os << edge.v1 << L"," << edge.v2 << L"," << string_to_wchar(edge.color);
+// Overload for Edge OutStream
+std::ostream& operator<<(std::ostream& os, const Edge& edge) {
+	os << edge.v1 << "," << edge.v2 << "," << edge.color;
 	return os;
 }
 
-// Overload for Graph Input
-std::wistream& operator>>(std::wistream& is, Graph& graph) {
-	std::wstring verticesLine, edgesLine;
+
+// Overload for Graph InStream
+std::istream& operator>>(std::istream& is, Graph& graph) {
+	std::string line;
 
 	// Clear the graph before importing
 	graph.V.clear();
 	graph.E.clear();
 
-	// Read vertices line
-	if (getline(is, verticesLine)) {
-		std::wstringstream vertexStream(verticesLine);
-		std::wstring vertexInfo;
-		while (getline(vertexStream, vertexInfo, L':')) {
-			std::wstringstream vertexData(vertexInfo);
-			int id, color, degree;
-			wchar_t comma;
-
-			if (vertexData >> id >> comma >> color >> comma >> degree) {
-				graph.V.emplace_back(id); // Add vertex to graph
-				graph.V.back().color = color;
-				graph.V.back().degree = degree;
+	// Vertices section
+	if (std::getline(is, line) && line == "V") {
+		while (std::getline(is, line) && !line.empty() && line != "E") {
+			std::stringstream vertexStream(line);
+			Vertex vertex;
+			if (vertexStream >> vertex) {
+				graph.V.push_back(vertex);
+			}
+			else {
+				std::cerr << "Error parsing vertex: " << line << std::endl;
 			}
 		}
 	}
 
-	// Read edges line
-	if (getline(is, edgesLine)) {
-		std::wstringstream edgeStream(edgesLine);
-		std::wstring edgeInfo;
-		while (getline(edgeStream, edgeInfo, L':')) {
-			std::wstringstream edgeData(edgeInfo);
-			int v1, v2, color;
-			wchar_t comma;
-
-			if (edgeData >> v1 >> comma >> v2 >> comma >> color) {
-				graph.E.emplace_back(v1, v2); // Add edge to graph
-				graph.E.back().color = color;
+	// Edge section
+	if (line == "E") {
+		while (std::getline(is, line) && !line.empty()) {
+			std::stringstream edgeStream(line);
+			Edge edge;
+			if (edgeStream >> edge) {
+				graph.E.push_back(edge);
+			}
+			else {
+				std::cerr << "Error parsing edge: " << line << std::endl;
 			}
 		}
 	}
@@ -85,17 +78,19 @@ std::wistream& operator>>(std::wistream& is, Graph& graph) {
 	return is;
 }
 
-// Overload for Graph Output
-std::wostream& operator<<(std::wostream& os, const Graph& graph) {
+// Overload for Graph OutStream
+std::ostream& operator<<(std::ostream& os, const Graph& graph) {
 	// Output vertices
-	for (const auto& vertex : graph.V) {
-		os << vertex.id << L"," << string_to_wchar(vertex.color) << L"," << vertex.degree << L":";
+	os << "V" << std::endl;
+	for (Vertex vertex : graph.V) {
+		os << vertex << std::endl;
+		std::cout << vertex << std::endl;
 	}
-	os << std::endl;
-
+	os << "E" << std::endl;
 	// Output edges
-	for (const auto& edge : graph.E) {
-		os << edge.v1 << L"," << edge.v2 << L"," << string_to_wchar(edge.color) << L":";
+	for (Edge edge : graph.E) {
+		os << edge << std::endl;
+		std::cout << edge << std::endl;
 	}
 
 	return os;
@@ -142,33 +137,22 @@ void Graph::cprint() const {
 	std::cout << "--------------------------------------------------------------------------------------------------------------" << std::endl;
 }
 
-
-// Graph Export Functions
-void Vertex::export_vertex(std::wofstream& outputFile) const {
-	outputFile << id << L"," << degree << L"," << string_to_wchar(color);
-}
-
-
-void Edge::export_edge(std::wofstream& outputFile) const {
-	outputFile << v1 << L"," << v2 << L"," << string_to_wchar(color);
-}
-
-
+// Graph Export Function
 void Graph::export_graph(const std::wstring& filename) const {
-	std::wofstream outputFile(filename, std::wfstream::trunc);
+	std::ofstream outputFile(filename, std::wfstream::trunc);
 	if (!outputFile.is_open()) {
 		std::cerr << "Error opening file!" << std::endl;
 		return;
 	}
 	outputFile << std::dec;
-	outputFile << this;
+	outputFile << *this;
 	outputFile.close();
 }
 
 
 // Graph Import Function
 void Graph::import_graph(const std::wstring& filename) {
-	std::wifstream inputFile(filename);
+	std::ifstream inputFile(filename);
 	if (!inputFile.is_open()) {
 		std::cerr << "Error opening file!" << std::endl;
 		return;
@@ -273,8 +257,8 @@ void Graph::gen_rand_graph(int n, float p) {
 	adj = std::vector<std::vector<bool>>(n, std::vector<bool>(n, false));
 
 	for (int i = 0; i < n; i++) {
-		add_vertex(i);
-		for (int j = i + 1; j < n; j++) {
+		add_vertex();
+		for (int j = 0; j < i; ++j) {
 			if (float(rand()) / RAND_MAX < p) {
 				add_edge(i, j);
 			}
@@ -317,13 +301,8 @@ void Graph::gen_rand_colors() {
 
 
 // Graph Manipulation Functions
-void Graph::add_vertex(int id, std::string color) {
-	for (const auto& vertex : V) {
-		if (vertex.id == id) {
-			std::cout << "Vertex " << id << " already exists in the graph." << std::endl;
-			return;
-		}
-	}
+void Graph::add_vertex(std::string color) {
+	int id = V.size();
 	V.emplace_back(id, color);
 	size_t newSize = max(id + 1, adj.size());
 	for (auto& row : adj) {

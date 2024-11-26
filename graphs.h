@@ -21,11 +21,10 @@ public:
 	Vertex(int v, std::string color) : id(v), color(color), degree(0) {}
 	Vertex(int v, std::string color, int degree) : id(v), color(color), degree(degree) {}
 
-	friend std::wistream& operator>>(std::wistream& is, Vertex& vertex);
-	friend std::wostream& operator<<(std::wostream& os, const Vertex& vertex);
+	friend std::istream& operator>>(std::istream& is, Vertex& vertex);
+	friend std::ostream& operator<<(std::ostream& os, const Vertex& vertex);
 
 	void cprint() const;
-	void export_vertex(std::wofstream& outputFile) const;
 	void print_to_file(std::ofstream& outputFile, std::string color) const;
 };
 
@@ -40,11 +39,10 @@ public:
 	Edge(int vertex1, int vertex2) : v1(vertex1), v2(vertex2), color("#FFFFFF") {}
 	Edge(int vertex1, int vertex2, std::string color) : v1(vertex1), v2(vertex2), color(color) {}
 
-	friend std::wistream& operator>>(std::wistream& is, Edge& edge);
-	friend std::wostream& operator<<(std::wostream& os, const Edge& edge);
+	friend std::istream& operator>>(std::istream& is, Edge& edge);
+	friend std::ostream& operator<<(std::ostream& os, const Edge& edge);
 
 	void cprint() const;
-	void export_edge(std::wofstream& outputFile) const;
 	void print_to_file(std::ofstream& outputFile, std::string color) const;
 };
 
@@ -59,8 +57,8 @@ public:
 	Graph() : V(), E() {}
 	Graph(const std::vector<Vertex>& Vertices, const std::vector<Edge>& Edges) : V(Vertices), E(Edges) {}
 
-	friend std::wistream& operator>>(std::wistream& is, Graph& graph);
-	friend std::wostream& operator<<(std::wostream& os, const Graph& graph);
+	friend std::istream& operator>>(std::istream& is, Graph& graph);
+	friend std::ostream& operator<<(std::ostream& os, const Graph& graph);
 
 	void cprint() const;													// Print the Graph to the console
 	void print_to_file(const std::string& filename) const;					// Print the Graph to a file
@@ -69,7 +67,7 @@ public:
 	//void generate_svg(const std::string& filename) const;					// Generate SVG of graph
 	void gen_rand_graph(int n, float p);									// Generate Random Graphs
 	void gen_rand_colors();													// Randomly Color the Graph
-	void add_vertex(int id, std::string color = "#000000");					// Add a Vertex to Graph
+	void add_vertex(std::string color = "#000000");							// Add a Vertex to Graph
 	void add_edge(int u, int v, std::string color = "#000000");				// Add an Edge to Graph
 	void get_degrees();														// Get all vertex degrees
 	bool has_edge() const;													// Check if the Graph has an Edge

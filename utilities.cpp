@@ -17,7 +17,7 @@ void resetConsoleColor() {
 COLORREF hex_to_rgb(const std::string& hex) {
     // Hex string must be in the format "#RRGGBB"
     if (hex[0] != L'#' || hex.length() != 7) {
-        return RGB(1, 1, 1);  // Default to black if invalid format
+        return RGB(1, 1, 1); 
     }
 
     // Parse the hex string
@@ -35,6 +35,7 @@ int color_distance(COLORREF c1, COLORREF c2) {
     int r2 = GetRValue(c2), g2 = GetGValue(c2), b2 = GetBValue(c2);
     return (r1 - r2) * (r1 - r2) + (g1 - g2) * (g1 - g2) + (b1 - b2) * (b1 - b2);
 }
+
 
 // Map a COLORREF to the closest console color
 ConsoleColor color_to_console_color(COLORREF color) {

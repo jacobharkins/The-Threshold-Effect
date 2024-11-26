@@ -4,13 +4,13 @@
 
 struct ButtonInfo {
     const wchar_t* name;
-    int id;
+    const int index;
+    const int order;
 };
 
 // Constant Values
 constexpr int BUTTON_WIDTH = 150;
 constexpr int BUTTON_HEIGHT = 30;
-constexpr int BUTTON_X = 10;
 constexpr int GRAPH_PANEL_HEIGHT = 400;   
 constexpr int LEFT_PANEL_WIDTH = 200;
 constexpr int VERTEX_RADIUS = 10;
@@ -25,25 +25,28 @@ constexpr int TOP_START = 50;
 #define GRAPH_HEIGHT(height) (BOTTOM_END(height) - TOP_START)
 #define GRAPH_SIZE int(rand() % 15)
 #define BUTTON_Y(index) (BUTTON_HEIGHT + 10)* index
+#define BUTTON_X (LEFT_PANEL_WIDTH / 2) - (BUTTON_WIDTH / 2)
 
-#define CREATE_PANEL_BUTTON(buttonName, index)\
-     CreateWindow(L"BUTTON", buttonName,\
-     WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,\
-     BUTTON_X, BUTTON_Y(index), BUTTON_WIDTH, BUTTON_HEIGHT,\
+#define CREATE_PANEL_BUTTON(buttonName, index, order)\
+     CreateWindowEx( WS_EX_WINDOWEDGE , \
+     L"BUTTON", buttonName,\
+     WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON | BS_CENTER,\
+     BUTTON_X, BUTTON_Y(order), BUTTON_WIDTH, BUTTON_HEIGHT,\
      hWnd, (HMENU)index, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL)
 
+#define REDRAW_GRAPH InvalidateRect(hGraphWnd, NULL, TRUE); UpdateWindow(hGraphWnd);
 
-
-std::vector<ButtonInfo> buttonList = {
-    {L"Randomize Graph", 1},
-    {L"Color Graph", 2},
-    {L"Export Graph", 3},
-    {L"Import Graph", 4},
-    {L"Check For Edge", 5},
-    {L"Check For k3", 6},
-    {L"Check For k4", 7},
-    {L"Check Hamiltonian", 8},
-    {L"CPrint", 9}
+const std::vector<ButtonInfo> buttonList = {
+    {L"Randomize Graph", 1, 1},
+    {L"Color Graph", 2, 2},
+    {L"Export Graph", 3, 3},
+    {L"Import Graph", 4, 4},
+    {L"Check For Edge", 5, 5},
+    {L"Check For k3", 6, 6},
+    {L"Check For k4", 7, 7},
+    {L"Check Hamiltonian", 8, 8},
+    {L"CPrint", 9, 10},
+    {L"Add Vertex", 10, 9}
 };
 
 // Global variables
@@ -51,6 +54,10 @@ HINSTANCE hInst;
 HWND hLeftPanel;
 HWND hGraphPanel;
 HWND hWndGraphPanel; 
+HWND hGraphSizeInput;
+HWND hEdgeProbInput;
+HWND hGraphWnd;
+HWND hMainWindow;
 Graph graph;
 
 float edgeProbability = 0.5;
@@ -125,22 +132,28 @@ void draw_graph(HDC hdc, int leftStart, int topStart, int rightEnd, int bottomEn
 // Create UI elements, dividing the window into left and right panels
 static void create_UI_elements(HWND hWnd) {
     // Left panel (buttons)
-    hLeftPanel = CreateWindow(L"STATIC", L"Left Panel",
-        WS_CHILD | WS_VISIBLE | SS_BLACKFRAME,
-        0, 0, LEFT_PANEL_WIDTH, 2000, hWnd, NULL, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
+    hLeftPanel = CreateWindowEx(WS_EX_CONTROLPARENT | WS_EX_CLIENTEDGE,
+        L"STATIC", L"Control",
+        WS_CHILD | WS_VISIBLE | SS_SUNKEN | WS_BORDER,
+        0, 0, LEFT_PANEL_WIDTH, 2000, 
+        hWnd, NULL, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
 
     // Right panel (graph area)
-    hGraphPanel = CreateWindow(L"STATIC", L"Graph Panel",
-        WS_CHILD | WS_VISIBLE | SS_BLACKFRAME,
-        LEFT_PANEL_WIDTH, 0, 0, 0, hWnd, NULL, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
+    hGraphPanel = CreateWindowEx(WS_EX_CLIENTEDGE,
+        L"STATIC", L"Graph Panel",
+        WS_CHILD | WS_VISIBLE | SS_SUNKEN | WS_BORDER,
+        LEFT_PANEL_WIDTH, 0, 0, 0, 
+        hWnd, NULL, (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE), NULL);
 
+    hGraphWnd = hWnd;
     // Create buttons for the left panel (inside hLeftPanel)
     for (ButtonInfo button : buttonList) {
-        CREATE_PANEL_BUTTON(button.name, button.id);
+        CREATE_PANEL_BUTTON(button.name, button.index, button.order);
     }
 }
 
 
+// Function to handle window resizing
 static void resize_ui_elements(HWND hWnd, LPARAM lParam) {
     int newWidth = LOWORD(lParam);
     int newHeight = HIWORD(lParam);
@@ -153,6 +166,120 @@ static void resize_ui_elements(HWND hWnd, LPARAM lParam) {
 }
 
 
+// Popup Procedure to handle popup made by create_input_popup
+LRESULT CALLBACK popup_procedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+    static HWND hSizeEdit, hProbEdit;
+
+    switch (message) {
+        case WM_CREATE:
+            // Create controls once, when the popup is first created
+            hSizeEdit = CreateWindowEx(
+                WS_EX_CLIENTEDGE,
+                L"EDIT", L"",
+                WS_CHILD | WS_VISIBLE | WS_BORDER | ES_RIGHT | WS_TABSTOP,
+                150, 10, 80, 20,
+                hWnd, (HMENU)1, NULL, NULL);
+
+            CreateWindowEx(
+                0,
+                L"STATIC", L"Graph Size:",
+                WS_CHILD | WS_VISIBLE,
+                10, 10, 100, 20,
+                hWnd, NULL, NULL, NULL);
+
+            hProbEdit = CreateWindowEx(
+                WS_EX_CLIENTEDGE,
+                L"EDIT", L"",
+                WS_CHILD | WS_VISIBLE | WS_BORDER | ES_RIGHT | WS_TABSTOP,
+                150, 40, 80, 20, hWnd, (HMENU)2, NULL, NULL);
+
+            CreateWindowEx(
+                0,
+                L"STATIC", L"Edge Probability:",
+                WS_CHILD | WS_VISIBLE,
+                10, 40, 120, 20,
+                hWnd, NULL, NULL, NULL);
+
+            CreateWindowEx(
+                0,
+                L"BUTTON", L"Generate",
+                WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | WS_TABSTOP,
+                10, 80, 100, 30,
+                hWnd, (HMENU)3, NULL, NULL);
+
+            CreateWindowEx(0,
+                L"BUTTON", L"Cancel",
+                WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | WS_TABSTOP,
+                120, 80, 100, 30,
+                hWnd, (HMENU)4, NULL, NULL);
+            break;
+
+        case WM_COMMAND:
+            switch (LOWORD(wParam)) {
+            case 3: // "Generate" button
+            {
+                TCHAR sizeBuffer[10], probBuffer[10];
+                GetWindowText(hSizeEdit, sizeBuffer, 10);
+                GetWindowText(hProbEdit, probBuffer, 10);
+
+                int size = _wtoi(sizeBuffer);
+                float prob = static_cast<float>(_wtof(probBuffer));
+
+                if (size <= 0 || prob < 0.0f || prob > 1.0f) {
+                    MessageBox(hWnd, L"Invalid input. Please enter valid numbers.", L"Error", MB_OK | MB_ICONERROR);
+                }
+                else {
+                    std::cout << prob;
+                    graph.gen_rand_graph(size, prob);
+                    REDRAW_GRAPH;
+                    MessageBox(hWnd, L"Graph generated successfully!", L"Success", MB_OK);
+                    SetForegroundWindow(hMainWindow);
+                    DestroyWindow(hWnd);
+                }
+                break;
+            }
+            case 4: // "Cancel" button
+                DestroyWindow(hWnd);
+                break;
+            }
+            break;
+
+        case WM_CLOSE:
+            DestroyWindow(hWnd);
+            break;
+        default:
+            return DefWindowProc(hWnd, message, wParam, lParam);
+        }
+    
+    return 0;
+}
+
+
+// Function to create the popUI for generating a random graph
+void create_input_popup(HWND parent) {
+    // Register a window class for the popup
+    WNDCLASS wc = {};
+    wc.lpfnWndProc = popup_procedure;
+    wc.hInstance = GetModuleHandle(NULL);
+    wc.lpszClassName = L"PopupClass";
+    wc.hbrBackground = (HBRUSH)(COLOR_3DFACE + 1); // Classic gray background
+    wc.style = CS_HREDRAW | CS_VREDRAW;
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    RegisterClass(&wc);
+
+    // Create the popup window with classic styles
+    HWND hPopup = CreateWindowEx(
+        WS_EX_DLGMODALFRAME,    // Classic modal dialog frame
+        L"PopupClass",          // Registered class name
+        L"Input Graph Details", // Title
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, // Classic styles
+        CW_USEDEFAULT, CW_USEDEFAULT, 400, 300,  // Position and size
+        hMainWindow, NULL, GetModuleHandle(NULL), NULL
+    );
+    ShowWindow(hPopup, SW_SHOW);
+    UpdateWindow(hPopup);
+}
+
 
 // Function to process button clicks
 void process_button_click(HWND hWnd, WPARAM wParam) {
@@ -160,18 +287,13 @@ void process_button_click(HWND hWnd, WPARAM wParam) {
         switch (LOWORD(wParam)) {
         // Generate random graph
         case 1: {
-            InvalidateRect(hWnd, NULL, TRUE); 
-            graph.gen_rand_graph(GRAPH_SIZE, edgeProbability);
-            graph.cprint();
-            InvalidateRect(hWnd, NULL, TRUE); 
-            UpdateWindow(hWnd); 
+            create_input_popup(hWnd);
             break;
         }
         // Randomly color graph
         case 2: {
             graph.gen_rand_colors();
-            InvalidateRect(hWnd, NULL, TRUE); 
-            UpdateWindow(hWnd); 
+            REDRAW_GRAPH;
             break;
         }
         // Export graph to file
@@ -204,6 +326,7 @@ void process_button_click(HWND hWnd, WPARAM wParam) {
                 graph.import_graph(filename);
                 MessageBox(hWnd, L"Graph Imported!", L"Info", MB_OK);
             }
+            REDRAW_GRAPH;
             break;
         }
         // Check Edge in graph
@@ -251,11 +374,23 @@ void process_button_click(HWND hWnd, WPARAM wParam) {
             graph.cprint();
             break;
         }
+        // Add vertex
+        case 10: {
+            graph.add_vertex();
+            REDRAW_GRAPH;
+            break;
+        }
+        // Add edge
+        case 11: {
+            graph.cprint();
+            break;
+        }
         default: {
             std::wcout << L"Unknown Button Pressed " << commandId << std::endl;
         }
     }
 }
+
 
 // Window procedure to handle messages
 LRESULT CALLBACK window_procedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -272,13 +407,13 @@ LRESULT CALLBACK window_procedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM
         GetClientRect(hWnd, &clientRect);
 
         // Calculate graph boundaries
-        int leftStart = LEFT_PANEL_WIDTH;
+        int leftStart = LEFT_PANEL_WIDTH + 5;
         int topStart = TOP_START;
         int rightEnd = RIGHT_END(clientRect.right);
         int bottomEnd = BOTTOM_END(clientRect.bottom);
 
         // Use the graph dimensions for drawing
-        FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 2));
+        FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_BTNFACE + 2));
         draw_graph(hdc, leftStart, topStart, rightEnd, bottomEnd);
 
         EndPaint(hWnd, &ps);
@@ -290,8 +425,8 @@ LRESULT CALLBACK window_procedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 
     case WM_SIZE: {
         // Retrieve the new dimensions of the client area
-        int width = LOWORD(lParam);  // Width of the window's client area
-        int height = HIWORD(lParam); // Height of the window's client area
+        int width = LOWORD(lParam);  
+        int height = HIWORD(lParam); 
 
         // Calculate graph boundaries
         int leftStart = LEFT_START;
@@ -302,7 +437,6 @@ LRESULT CALLBACK window_procedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM
         int graphWidth = GRAPH_WIDTH(width);
         int graphHeight = GRAPH_HEIGHT(height);
 
-        // Optionally, invalidate the graph area for a redraw
         RECT graphRect = { leftStart, topStart, rightEnd, bottomEnd };
         InvalidateRect(hWnd, &graphRect, TRUE);
 
@@ -346,27 +480,25 @@ int WINAPI WinMain(_In_opt_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
     }
 
 
-    graph.gen_rand_graph(GRAPH_SIZE, edgeProbability);
-    graph.export_graph(L"Test.g");
-    //graph.gen_rand_colors();
-    graph.cprint();
-    
-
-
     WNDCLASSEX wcex = {};
     wcex.cbSize = sizeof(WNDCLASSEX);
-    wcex.lpfnWndProc = window_procedure;     // Set window procedure
+    wcex.lpfnWndProc = window_procedure;     
     wcex.hInstance = hInstance;
     wcex.lpszClassName = L"GraphAppClass";
 
+    
     RegisterClassEx(&wcex);
-
+    HFONT hFont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
+    SendMessage(hLeftPanel, WM_SETFONT, (WPARAM)hFont, TRUE);
 
     // Create the window
-    HWND hWnd = CreateWindow(L"GraphAppClass", L"Graph Application",
-        WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
+    HWND hWnd = CreateWindowEx(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE,
+        L"GraphAppClass", L"Graph Application",
+        WS_OVERLAPPEDWINDOW | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
+        CW_USEDEFAULT, CW_USEDEFAULT,
         800, 600, NULL, NULL, hInstance, NULL);
 
+    hMainWindow = hWnd;
     ShowWindow(hWnd, nCmdShow);
     UpdateWindow(hWnd);
 
