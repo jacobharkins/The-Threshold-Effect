@@ -25,7 +25,6 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, const Vertex& vertex);
 
 	void cprint() const;
-	void print_to_file(std::ofstream& outputFile, std::string color) const;
 };
 
 
@@ -43,7 +42,6 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, const Edge& edge);
 
 	void cprint() const;
-	void print_to_file(std::ofstream& outputFile, std::string color) const;
 };
 
 
@@ -61,7 +59,7 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, const Graph& graph);
 
 	void cprint() const;													// Print the Graph to the console
-	void print_to_file(const std::string& filename) const;					// Print the Graph to a file
+	void generate_svg(const std::wstring& filename) const;					// Print the Graph to a file
 	void export_graph(const std::wstring& filename) const;					// Export the Graph to a file
 	void import_graph(const std::wstring& filename);						// Import the Graph from a file
 	//void generate_svg(const std::string& filename) const;					// Generate SVG of graph

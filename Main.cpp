@@ -46,7 +46,8 @@ const std::vector<ButtonInfo> buttonList = {
     {L"Check For k4", 7, 7},
     {L"Check Hamiltonian", 8, 8},
     {L"CPrint", 9, 10},
-    {L"Add Vertex", 10, 9}
+    {L"Add Vertex", 10, 9},
+    {L"Generate SVG", 11, 11 }
 };
 
 // Global variables
@@ -73,7 +74,7 @@ void draw_graph(HDC hdc, int leftStart, int topStart, int rightEnd, int bottomEn
 
     // Example: Divide the area into a grid for vertices
     int numVertices = graph.V.size();
-    int cols = (int)sqrt(numVertices) + 1;
+    int cols = (int)sqrt(numVertices) ? (int)sqrt(numVertices) : 1;
     int rows = ((numVertices + cols - 1) / cols) + 1;
 
     int cellWidth = graphWidth / cols;
@@ -380,9 +381,20 @@ void process_button_click(HWND hWnd, WPARAM wParam) {
             REDRAW_GRAPH;
             break;
         }
-        // Add edge
+        // Generate SVG
         case 11: {
-            graph.cprint();
+            wchar_t filename[MAX_PATH] = L"";
+            OPENFILENAME ofn = {};
+            ofn.lStructSize = sizeof(ofn);
+            ofn.hwndOwner = hWnd;
+            ofn.lpstrFilter = L"Vector graphics\0*.svg\0";
+            ofn.lpstrFile = filename;
+            ofn.nMaxFile = MAX_PATH;
+            ofn.Flags = OFN_OVERWRITEPROMPT;
+            if (GetSaveFileName(&ofn)) {
+                graph.generate_svg(filename);
+                MessageBox(hWnd, L"Graph Exported to SVG!", L"Info", MB_OK);
+            }
             break;
         }
         default: {

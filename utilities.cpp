@@ -80,3 +80,5 @@ wchar_t* string_to_wchar(const std::string& str) {
 
     return wcharArray;
 }
+
+
