@@ -491,6 +491,23 @@ int WINAPI WinMain(_In_opt_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
         return -1;
     }
 
+    int argc;
+    LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+
+    if (argc > 1) {
+        // Argument 1 should be the file path
+        std::wstring filePath = argv[1];
+
+        // Load the file into your graph
+        std::ifstream inputFile(filePath);
+        if (inputFile.is_open()) {
+            inputFile >> graph;
+            inputFile.close();
+        }
+        else {
+            MessageBox(NULL, L"Failed to open file.", L"Error", MB_OK | MB_ICONERROR);
+        }
+    }
 
     WNDCLASSEX wcex = {};
     wcex.cbSize = sizeof(WNDCLASSEX);
@@ -519,7 +536,7 @@ int WINAPI WinMain(_In_opt_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
         return 0;
     }
 
-
+    LocalFree(argv);
     // Message loop
     MSG msg = {};
     while (GetMessage(&msg, nullptr, 0, 0)) {
